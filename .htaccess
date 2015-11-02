@@ -42,6 +42,7 @@
     RewriteRule .? - [L]
 
     # Rewrite all other queries to the front controller.
+	RewriteCond %{REQUEST_URI} !atmt_admin 
     RewriteRule .? %{ENV:BASE}/index.php [L]
 </IfModule>
 
