@@ -235,16 +235,15 @@ class MauticFactory
      */
     public function getTranslator()
     {
-        /** @var \Mautic\CoreBundle\Translation\Translator $translator */
-        $translator = $this->container->get('translator');
-
-        if ($translator->getLocale() === null) {
+        if (defined('IN_MAUTIC_CONSOLE')) {
+            /** @var \Mautic\CoreBundle\Translation\Translator $translator */
+            $translator = $this->container->get('translator');
             $translator->setLocale(
                 $this->getParameter('locale')
             );
+            return $translator;
         }
-
-        return $translator;
+        return $this->container->get('translator');
     }
 
     /**
