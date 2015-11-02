@@ -1258,7 +1258,8 @@ var Mautic = {
             if (response.route) {
                 //update URL in address bar
                 MauticVars.manualStateChange = false;
-                History.pushState(null, "Mautic", response.route);
+             // version_atmt
+                History.pushState(null, "Automation by Webmecanik", response.route);
             }
 
             if (response.target == '#app-content') {
@@ -2462,7 +2463,8 @@ var Mautic = {
                 if (response.route && response.route.indexOf("ajax") == -1) {
                     //update URL in address bar
                     MauticVars.manualStateChange = false;
-                    History.pushState(null, "Mautic", response.route);
+                 // version_atmt
+                    History.pushState(null, "Automation by Webmecanik", response.route);
                 }
             } else if (response.newContent && mQuery('.modal.in').length) {
                 //assume a modal was the recipient of the information
