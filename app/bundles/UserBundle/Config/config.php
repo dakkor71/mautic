@@ -61,6 +61,10 @@ return array(
                 'path'       => '/users',
                 'controller' => 'MauticUserBundle:Api\UserApi:getEntities',
             ),
+        	'mautic_api_addusers'        => array(
+        			'path'       => '/users/add',
+        			'controller' => 'MauticUserBundle:Api\UserApi:newEntity',
+        	),        		
             'mautic_api_getuser'         => array(
                 'path'         => '/users/{id}',
                 'controller'   => 'MauticUserBundle:Api\UserApi:getEntity'
@@ -74,6 +78,10 @@ return array(
                 'controller'   => 'MauticUserBundle:Api\UserApi:isGranted',
                 'method'       => 'POST'
             ),
+       		'mautic_api_addusers'        => array(
+       				'path'       => '/users/add',
+        			'controller' => 'MauticUserBundle:Api\UserApi:newEntity',
+        	),
             'mautic_api_getuserroles'    => array(
                 'path'       => '/users/list/roles',
                 'controller' => 'MauticUserBundle:Api\UserApi:getRoles',
