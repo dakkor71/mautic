@@ -383,7 +383,6 @@ class CampaignRepository extends CommonRepository
             ->where(
                 $q->expr()->andX(
                     $q->expr()->eq('campaign_leads.lead_id', 'list_leads.lead_id'),
-                    $q->expr()->eq('campaign_leads.manually_removed', ':false'),
                     $q->expr()->eq('campaign_leads.campaign_id', (int) $id)
                 )
             );
