@@ -25,228 +25,64 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     protected function getPayload()
     {
-    	$Payload = [
-				    'FromEmail' => "contact@webmecanik.com",
-				    'FromName' => "Test API mailjet!",
-				    'Subject' => "Test API mailjet!",
-				    'Text-part' => "Dear passenger, welcome to Mailjet! May the delivery force be with you!",
-				    'Html-part' => "<h3>Dear passenger, welcome to Mailjet!</h3><br />May the delivery force be with you!",
-				    'Recipients' => [
-				        [
-				            'Email' => "david.c@algofly.fr"
-				        ],
-			    		[
-			    			'Email' => "dco@webmecsdfanik.com"
-			    		]
-				    ]
-				];
-    	return $Payload;
-    	
+    	$payload=array();
     	
         $metadata     = $this->getMetadata();
-        $mauticTokens = $mandrillMergeVars = $mandrillMergePlaceholders = array();
-
-        // Mandrill uses *|PLACEHOLDER|* for tokens so Mautic's need to be replaced
+        
         if (!empty($metadata)) {
-            $metadataSet  = reset($metadata);
-            $tokens       = (!empty($metadataSet['tokens'])) ? $metadataSet['tokens'] : array();
-            $mauticTokens = array_keys($tokens);
-
-            $mandrillMergeVars = $mandrillMergePlaceholders = array();
-            foreach ($mauticTokens as $token) {
-                $mandrillMergeVars[$token]         = strtoupper(preg_replace("/[^a-z0-9]+/i", "", $token));
-                $mandrillMergePlaceholders[$token] = '*|'.$mandrillMergeVars[$token].'|*';
-            }
+        	$metadataSet=reset($metadata); // get first element of the table
+        	$payload['Mj-CustomID']=$metadataSet['hashId'];
         }
+        
+        $message = $this->messageToArray();
+		
 
-        $message = $this->messageToArray($mauticTokens, $mandrillMergePlaceholders, true);
 
-        // Not used ATM
-        unset($message['headers']);
+        $payload['FromEmail']=$message['from']['email'];
+        $payload['FromName']=$message['from']['name'];
+        
+        $payload['Recipients']=array();
+        $payload['To']=array();
+        $payload['Cc']=array();
+        $payload['Bcc']=array();
 
-        $message['from_email'] = $message['from']['email'];
-        $message['from_name']  = $message['from']['name'];
-        unset($message['from']);
-
-        if (!empty($metadata)) {
-            // Mandrill will only send a single email to cc and bcc of the first set of tokens
-            // so we have to manually set them as to addresses
-
-            // Problem is that it's not easy to know what email is sent so will tack it at the top
-            $insertCcEmailHeader = true;
-
-            $message['html'] = '*|HTMLCCEMAILHEADER|*'.$message['html'];
-            if (!empty($message['text'])) {
-                $message['text'] = '*|TEXTCCEMAILHEADER|*'.$message['text'];
-            }
-
-            // Do not expose all the emails in the if using metadata
-            $message['preserve_recipients'] = false;
-
-            $bcc = $message['recipients']['bcc'];
-            $cc  = $message['recipients']['cc'];
-
-            // Unset the cc and bcc as they will need to be sent as To with each set of tokens
-            unset($message['recipients']['bcc'], $message['recipients']['cc']);
+        foreach ($message['recipients']['to'] as $aT => $dataTo){
+        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
+        	$payload['To'][]=$dataTo['email'];
         }
-
-        // Generate the recipients
-        $recipients = $rcptMergeVars = $rcptMetadata = array();
-
-        $translator = $this->factory->getTranslator();
-
-        foreach ($message['recipients'] as $type => $typeRecipients) {
-            foreach ($typeRecipients as $rcpt) {
-                $rcpt['type'] = $type;
-                $recipients[] = $rcpt;
-
-                if ($type == 'to' && isset($metadata[$rcpt['email']])) {
-                    if (!empty($metadata[$rcpt['email']]['tokens'])) {
-                        $mergeVars = array(
-                            'rcpt' => $rcpt['email'],
-                            'vars' => array()
-                        );
-
-                        // This must not be included for CC and BCCs
-                        $trackingPixelToken = array();
-
-                        foreach ($metadata[$rcpt['email']]['tokens'] as $token => $value) {
-                            if ($token == '{tracking_pixel}') {
-                                $trackingPixelToken = array(
-                                    array(
-                                        'name'    => $mandrillMergeVars[$token],
-                                        'content' => $value
-                                    )
-                                );
-
-                                continue;
-                            }
-
-                            $mergeVars['vars'][] = array(
-                                'name'    => $mandrillMergeVars[$token],
-                                'content' => $value
-                            );
-                        }
-
-                        if (!empty($insertCcEmailHeader)) {
-                            // Make a copy before inserted the blank tokens
-                            $ccMergeVars       = $mergeVars;
-                            $mergeVars['vars'] = array_merge(
-                                $mergeVars['vars'],
-                                $trackingPixelToken,
-                                array(
-                                    array(
-                                        'name'    => 'HTMLCCEMAILHEADER',
-                                        'content' => ''
-                                    ),
-                                    array(
-                                        'name'    => 'TEXTCCEMAILHEADER',
-                                        'content' => ''
-                                    )
-                                )
-                            );
-                        } else {
-                            // Just merge the tracking pixel tokens
-                            $mergeVars['vars'] = array_merge($mergeVars['vars'], $trackingPixelToken);
-                        }
-
-                        // Add the vars
-                        $rcptMergeVars[] = $mergeVars;
-
-                        // Special handling of CC and BCC with tokens
-                        if (!empty($cc) || !empty($bcc)) {
-                            $ccMergeVars['vars'] = array_merge(
-                                $ccMergeVars['vars'],
-                                array(
-                                    array(
-                                        'name'    => 'HTMLCCEMAILHEADER',
-                                        'content' => $translator->trans('mautic.core.email.cc.copy',
-                                            array(
-                                                '%email%' => $rcpt['email']
-                                            )
-                                        ) . "<br /><br />"
-                                    ),
-                                    array(
-                                        'name'    => 'TEXTCCEMAILHEADER',
-                                        'content' => $translator->trans('mautic.core.email.cc.copy',
-                                            array(
-                                                '%email%' => $rcpt['email']
-                                            )
-                                        ) . "\n\n"
-                                    ),
-                                    array(
-                                        'name'    => 'TRACKINGPIXEL',
-                                        'content' => MailHelper::getBlankPixel()
-                                    )
-                                )
-                            );
-
-                            // If CC and BCC, remove the ct from URLs to prevent false lead tracking
-                            foreach ($ccMergeVars['vars'] as &$var) {
-                                if (strpos($var['content'], 'http') !== false && $ctPos = strpos($var['content'], 'ct=') !== false) {
-                                    // URL so make sure a ct query is not part of it
-                                    $var['content'] = substr($var['content'], 0, $ctPos);
-                                }
-                            }
-
-                            // Send same tokens to each CC
-                            if (!empty($cc)) {
-                                foreach ($cc as $ccRcpt) {
-                                    $recipients[]        = $ccRcpt;
-                                    $ccMergeVars['rcpt'] = $ccRcpt['email'];
-                                    $rcptMergeVars[]     = $ccMergeVars;
-                                }
-                            }
-
-                            // And same to BCC
-                            if (!empty($bcc)) {
-                                foreach ($bcc as $ccRcpt) {
-                                    $recipients[]        = $ccRcpt;
-                                    $ccMergeVars['rcpt'] = $ccRcpt['email'];
-                                    $rcptMergeVars[]     = $ccMergeVars;
-                                }
-                            }
-                        }
-
-                        unset($ccMergeVars, $mergeVars, $metadata[$rcpt['email']]['tokens']);
-                    }
-
-                    if (!empty($metadata[$rcpt['email']])) {
-                        $rcptMetadata[] = array(
-                            'rcpt'   => $rcpt['email'],
-                            'values' => $metadata[$rcpt['email']]
-                        );
-                        unset($metadata[$rcpt['email']]);
-                    }
-                }
-            }
+        foreach ($message['recipients']['cc'] as $aT => $dataTo){
+        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
+        	$payload['Cc'][]=$dataTo['email'];
         }
-
-        $message['to'] = $recipients;
-
-        unset($message['recipients']);
-
-        // Set the merge vars
-        $message['merge_vars'] = $rcptMergeVars;
-
-        // Set the rest of $metadata as recipient_metadata
-        $message['recipient_metadata'] = $rcptMetadata;
+        foreach ($message['recipients']['bcc'] as $aT => $dataTo){
+        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
+        	$payload['Bcc'][]=$dataTo['email'];
+        }        
+        
 
         // Set the reply to
         if (!empty($message['replyTo'])) {
-            $message['headers']['Reply-To'] = $message['replyTo']['email'];
+        	if (!isset( $payload['headers'])){ $payload['headers']=array();}
+            $payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
         }
-        unset($message['replyTo']);
+        
+        if (!empty($message['file_attachments'])) {
+        	//TODO not used ATM
+//         	if (!isset( $payload['headers'])){ $payload['headers']=array();}
+//         	$payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
+        }       
 
-        // Package it up
-        $payload = json_encode(
-            array(
-                'key'     => $this->getPassword(),
-                'message' => $message
-            )
-        );
-
-        return $payload;
+        if (!empty($message['replyTo'])) {
+        	if (!isset( $payload['headers'])){ $payload['headers']=array();}
+        	$payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
+        }        
+        
+        $payload['Subject']=$message['subject'];
+        
+        $payload['Text-part']=$message['text'];
+        $payload['Html-part']=$message['html'];
+	
+        return ($payload);
     }
 
     /**
@@ -254,17 +90,17 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     protected function getHeaders()
     {
-		return 'Content-Type: application/json';
+    
     }
-
+    
     /**
      * {@inheritdoc}
      */
     protected function getApiEndpoint()
     {
-        return 'https://api.mailjet.com/v3/send';
+    	
     }
-
+    
     /**
      * Start this Transport mechanism.
      */
@@ -398,7 +234,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     public function getBatchRecipientCount(\Swift_Message $message, $toBeAdded = 1, $type = 'to')
     {
-        // Not used by Mandrill API
+        // Not used by Mailjet API
         return 0;
     }
 
@@ -412,7 +248,9 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
-        $mandrillEvents = $request->request->get('mandrill_events');
+// 		$postDatra
+    	$mandrillEvents = $request->request->get('mandrill_events');
+    	var_dump($mandrillEvents);
         $mandrillEvents = json_decode($mandrillEvents, true);
         $rows           = array(
             'bounced' => array(
@@ -455,75 +293,11 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     protected function post($settings = array())
     {
 		$payload = empty ( $settings ['payload'] ) ? $this->getPayload () : $settings ['payload'];
-// 		$headers = empty ( $settings ['headers'] ) ? $this->getHeaders () : $settings ['headers'];
-// 		$endpoint = empty ( $settings ['url'] ) ? $this->getApiEndpoint () : $settings ['url'];
-		
 
 		$mj = new \Mailjet\Client($this->getUsername (), $this->getPassword ());
 		$mj->setSecureProtocol(false);
 		$response = $mj->post(Resources::$Email, ['body' => $payload]);
-		
 		return $this->handlePostResponse ( $response->getData(), $info =null);
     }
     
-    private function curl_setopt_custom_postfields($curl_handle, $postfields, $headers = null) {
-    	$algos = hash_algos ();
-    	$hashAlgo = null;
-    	foreach ( array (
-    			'sha1',
-    			'md5'
-    	) as $preferred ) {
-    		if (in_array ( $preferred, $algos )) {
-    			$hashAlgo = $preferred;
-    			break;
-    		}
-    	}
-    	if ($hashAlgo === null) {
-    		list ( $hashAlgo ) = $algos;
-    	}
-    	$boundary = '----------------------------' . substr ( hash ( $hashAlgo, 'cURL-php-multiple-value-same-key-support' . microtime () ), 0, 12 );
-    	$body = array ();
-    	$crlf = "\r\n";
-    	foreach ( $postfields as $key => $value ) {
-    		if (is_array ( $value )) {
-    			foreach ( $value as $filename => $path ) {
-    				// attachment
-    				if (strpos ( $path, '@' ) === 0) {
-    					preg_match ( '/^@(.*?)$/', $path, $matches );
-    					list ( $dummy, $path ) = $matches;
-    					if (is_int ( $filename )) {
-    						$filename = basename ( $path );
-    					}
-    					$body [] = '--' . $boundary;
-    					$body [] = 'Content-Disposition: form-data; name="' . $key . '"; filename="' . $filename . '"';
-    					$body [] = 'Content-Type: application/octet-stream';
-    					$body [] = '';
-    					$body [] = file_get_contents ( $path );
-    				}  // Array of recipients
-    				else if ('to' == $key || 'cc' == $key || 'bcc' == $key) {
-    					$body [] = '--' . $boundary;
-    					$body [] = 'Content-Disposition: form-data; name="' . $key . '"';
-    					$body [] = '';
-    					$body [] = trim ( $path );
-    				}
-    			}
-    		} else {
-    			$body [] = '--' . $boundary;
-    			$body [] = 'Content-Disposition: form-data; name="' . $key . '"';
-    			$body [] = '';
-    			$body [] = $value;
-    		}
-    	}
-    	$body [] = '--' . $boundary . '--';
-    	$body [] = '';
-    	$contentType = 'multipart/form-data; boundary=' . $boundary;
-    	$content = join ( $crlf, $body );
-    	$contentLength = strlen ( $content );
-    	curl_setopt ( $curl_handle, CURLOPT_HTTPHEADER, array (
-    			'Content-Length: ' . $contentLength,
-    			'Expect: 100-continue',
-    			'Content-Type: ' . $contentType
-    	) );
-    	curl_setopt ( $curl_handle, CURLOPT_POSTFIELDS, $content );
-    }
 }
