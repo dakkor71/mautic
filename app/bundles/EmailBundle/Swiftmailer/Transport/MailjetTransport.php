@@ -248,46 +248,59 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
-// 		$postDatra
-    	$mandrillEvents = $request->request->get('mandrill_events');
-    	var_dump($mandrillEvents);
-        $mandrillEvents = json_decode($mandrillEvents, true);
-        $rows           = array(
-            'bounced' => array(
-                'hashIds' => array(),
-                'emails'  => array()
-            ),
-            'unsubscribed' => array(
-                'hashIds' => array(),
-                'emails'  => array()
-            )
-        );
-
-        if (is_array($mandrillEvents)) {
-            foreach ($mandrillEvents as $event) {
-                $isBounce      = in_array($event['event'], array('hard_bounce', 'soft_bounce', 'reject', 'spam', 'invalid'));
-                $isUnsubscribe = ('unsub' === $event['event']);
-                if ($isBounce || $isUnsubscribe) {
-                    $type = ($isBounce) ? 'bounced' : 'unsubscribed';
-
-                    if (!empty($event['msg']['diag'])) {
-                        $reason = $event['msg']['diag'];
-                    } elseif (!empty($event['msg']['bounce_description'])) {
-                        $reason = $event['msg']['bounce_description'];
-                    } else {
-                        $reason = ($isUnsubscribe) ? 'unsubscribed' : $event['event'];
-                    }
-
-                    if (isset($event['msg']['metadata']['hashId'])) {
-                        $rows[$type]['hashIds'][$event['msg']['metadata']['hashId']] = $reason;
-                    } else {
-                        $rows[$type]['emails'][$event['msg']['email']] = $reason;
-                    }
-                }
-            }
-        }
-
-        return $rows;
+		$postData = json_decode($request->getContent(), true);
+// 		$this->factory->getLogger()->log('error',serialize($request));
+// 		$this->factory->getLogger()->log('error',$postData);
+	   	$rows = array (
+				'bounced' => array (
+						'hashIds' => array (),
+						'emails' => array () 
+				),
+				'unsubscribed' => array (
+						'hashIds' => array (),
+						'emails' => array () 
+				) 
+		);
+		
+		if (is_array ( $postData ) && isset ( $postData ['event'] )) {
+			// Mailjet API callback V1
+			$events = array (
+					$postData 
+			);
+		} elseif (is_array ( $postData )) {
+			// Mailjet API callback V2
+			$events = $postData;
+		} else {
+			// respone must be an array
+			return $rows;
+		}
+		
+		foreach ( $events as $event ) {
+			if (in_array ( $event ['event'], array (
+					'bounce',
+					'blocked',
+					'spam',
+					'unsub' 
+			) )) {
+				if ($event ['event'] === 'bounce' || $event ['event'] === 'blocked') {
+					$reason = $event ['error_related_to'] . ' : '. $event ['error'];
+					$type = 'bounced';
+				} elseif ($event ['event'] === 'spam') {
+					$reason = 'User reported email as spam, source :' . $event ['source'];
+					$type = 'bounced';
+				} elseif ($event ['event'] === 'unsub') {
+					$reason = 'User unsubscribed';
+					$type = 'unsubscribed';
+				}
+				
+				if (isset ( $event ['CustomID'] )) {
+					$rows [$type] ['hashIds'] [$event ['CustomID']] = $reason;
+				} else {
+					$rows [$type] ['emails'] [$event ['email']] = $reason;
+				}
+			}
+		}
+		return $rows;
     }
     
     protected function post($settings = array())
