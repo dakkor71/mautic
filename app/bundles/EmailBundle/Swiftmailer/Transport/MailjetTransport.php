@@ -26,17 +26,8 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     protected function getPayload()
     {
     	$payload=array();
-    	
-        $metadata     = $this->getMetadata();
-        
-        if (!empty($metadata)) {
-        	$metadataSet=reset($metadata); // get first element of the table
-        	$payload['Mj-CustomID']=$metadataSet['hashId'];
-        }
-        
-        $message = $this->messageToArray();
-		
 
+        $message = $this->messageToArray();
 
         $payload['FromEmail']=$message['from']['email'];
         $payload['FromName']=$message['from']['name'];
@@ -50,16 +41,24 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
         	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
         	$payload['To'][]=$dataTo['email'];
         }
-        foreach ($message['recipients']['cc'] as $aT => $dataTo){
-        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
-        	$payload['Cc'][]=$dataTo['email'];
+        foreach ($message['recipients']['cc'] as $aT => $dataCc){
+        	$payload['Recipients'][]=array('Email'=>$dataCc['email'],'Name'=>$dataCc['name']);
+        	$payload['Cc'][]=$dataCc['email'];
         }
-        foreach ($message['recipients']['bcc'] as $aT => $dataTo){
-        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
-        	$payload['Bcc'][]=$dataTo['email'];
+        foreach ($message['recipients']['bcc'] as $aT => $dataBcc){
+        	$payload['Recipients'][]=array('Email'=>$dataBcc['email'],'Name'=>$dataBcc['name']);
+        	$payload['Bcc'][]=$dataBcc['email'];
         }        
         
+        
+//         $metadata = $this->getMetadata();
 
+        if (!is_null($this->message->leadIdHash)) {
+        	$payload['Mj-CustomID']=$this->message->leadIdHash;
+        }
+        
+        var_dump(array($this->message->leadIdHash=>$payload['To'][0]));
+        
         // Set the reply to
         if (!empty($message['replyTo'])) {
         	if (!isset( $payload['headers'])){ $payload['headers']=array();}
@@ -81,7 +80,8 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
         
         $payload['Text-part']=$message['text'];
         $payload['Html-part']=$message['html'];
-	
+// 		var_dump($payload);
+// 		die('');
         return ($payload);
     }
 
@@ -122,7 +122,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     protected function handlePostResponse($response, $info)
     {
-		
+		/*
         if (!$this->started) {
             // Check the response for PONG!
             if ('PONG!' !== $response) {
@@ -131,6 +131,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 
             return true;
         }
+        */
                 
         if (!is_array($response)){
         	$this->throwException('MailJet not valid response');
@@ -221,7 +222,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
      */
     public function getMaxBatchLimit()
     {
-        // Not used by Mandrill API
+        // Not used by Mailjet API
         return 0;
     }
 
@@ -249,8 +250,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
 		$postData = json_decode($request->getContent(), true);
-// 		$this->factory->getLogger()->log('error',serialize($request));
-// 		$this->factory->getLogger()->log('error',$postData);
+		$this->factory->getLogger()->log('error',serialize($postData));
 	   	$rows = array (
 				'bounced' => array (
 						'hashIds' => array (),
@@ -310,6 +310,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 		$mj = new \Mailjet\Client($this->getUsername (), $this->getPassword ());
 		$mj->setSecureProtocol(false);
 		$response = $mj->post(Resources::$Email, ['body' => $payload]);
+
 		return $this->handlePostResponse ( $response->getData(), $info =null);
     }
     
