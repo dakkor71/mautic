@@ -36,7 +36,7 @@ use Symfony\Component\Debug\Debug;
 
 // This check prevents access to debug front controllers that are deployed by accident to production servers.
 // Feel free to remove this, extend it, or make something more sophisticated.
-$allowedIps = array('127.0.0.1', 'fe80::1', '::1');
+$allowedIps = array('127.0.0.1', 'fe80::1', '::1','77.154.192.58');
 if (isset($_SERVER['MAUTIC_DEV_HOSTS'])) {
     $localIps   = explode(' ', $_SERVER['MAUTIC_DEV_HOSTS']);
     $allowedIps = array_merge($allowedIps, $localIps);

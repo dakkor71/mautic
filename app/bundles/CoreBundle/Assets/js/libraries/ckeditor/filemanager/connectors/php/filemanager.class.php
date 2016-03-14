@@ -130,7 +130,7 @@ class Filemanager
         } else {
             $this->doc_root = $path; // i.e  '/var/www'
         }
-
+        //$this->doc_root=substr(__DIR__, 0,strpos(__DIR__, '/app/bundles')).'/media/images';
         // necessary for retrieving path when set dynamically with $fm->setFileRoot() method
         $this->dynamic_fileroot = str_replace($documentRoot, '', $this->doc_root);
         $this->path_to_files    = $this->doc_root;
@@ -1260,8 +1260,7 @@ class Filemanager
 
     private function is_valid_path($path)
     {
-
-        //  @todo to remove
+		//  @todo to remove
         // if(!$this->startsWith(realpath($path), realpath($this->path_to_files))) return false;
         // @see https://github.com/simogeo/Filemanager/issues/332
         // @see http://stackoverflow.com/questions/5642785/php-a-good-way-to-universalize-paths-across-oss-slash-directions
