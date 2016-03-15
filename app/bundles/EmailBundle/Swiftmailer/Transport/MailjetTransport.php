@@ -10,7 +10,7 @@
 namespace Mautic\EmailBundle\Swiftmailer\Transport;
 
 use Mautic\CoreBundle\Factory\MauticFactory;
-use Mautic\EmailBundle\Helper\MailHelper;
+
 use Symfony\Component\HttpFoundation\Request;
 use Mailjet\Resources;
 
@@ -53,11 +53,11 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
         
 //         $metadata = $this->getMetadata();
 
-        if (!is_null($this->message->leadIdHash)) {
+        if (isset($this->message->leadIdHash)) {
         	$payload['Mj-CustomID']=$this->message->leadIdHash;
         }
         
-        var_dump(array($this->message->leadIdHash=>$payload['To'][0]));
+//         var_dump(array($this->message->leadIdHash=>$payload['To'][0]));
         
         // Set the reply to
         if (!empty($message['replyTo'])) {
