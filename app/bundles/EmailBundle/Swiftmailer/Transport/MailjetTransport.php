@@ -30,23 +30,23 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
         $message = $this->messageToArray();
 
         $payload['FromEmail']=$message['from']['email'];
-        $payload['FromName']=$message['from']['name'];
-        
+        $payload['FromName']=(is_null($message['from']['name'])?$message['from']['email']:$message['from']['name']);
+
         $payload['Recipients']=array();
         $payload['To']=array();
         $payload['Cc']=array();
         $payload['Bcc']=array();
 
         foreach ($message['recipients']['to'] as $aT => $dataTo){
-        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>$dataTo['name']);
+        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>(is_null($dataTo['name'])?$dataTo['email']:$dataTo['name']));
         	$payload['To'][]=$dataTo['email'];
         }
         foreach ($message['recipients']['cc'] as $aT => $dataCc){
-        	$payload['Recipients'][]=array('Email'=>$dataCc['email'],'Name'=>$dataCc['name']);
+        	$payload['Recipients'][]=array('Email'=>$dataCc['email'],'Name'=>(is_null($dataCc['name'])?$dataCc['email']:$dataCc['name']));
         	$payload['Cc'][]=$dataCc['email'];
         }
         foreach ($message['recipients']['bcc'] as $aT => $dataBcc){
-        	$payload['Recipients'][]=array('Email'=>$dataBcc['email'],'Name'=>$dataBcc['name']);
+        	$payload['Recipients'][]=array('Email'=>$dataBcc['email'],'Name'=>(is_null($dataBcc['name'])?$dataBcc['email']:$dataBcc['name']));
         	$payload['Bcc'][]=$dataBcc['email'];
         }        
         
@@ -309,9 +309,15 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 
 		$mj = new \Mailjet\Client($this->getUsername (), $this->getPassword ());
 		$mj->setSecureProtocol(false);
-		$response = $mj->post(Resources::$Email, ['body' => $payload]);
-
-		return $this->handlePostResponse ( $response->getData(), $info =null);
+// 		try {
+			$response = $mj->post(Resources::$Email, ['body' => $payload]);
+			return $this->handlePostResponse ( $response->getData(), $info =null);
+// 		}
+// 		catch(Exception $e){
+// 			var_dump($e);
+// 			return false;
+// 		}
+		
     }
     
 }
