@@ -250,7 +250,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
 		$postData = json_decode($request->getContent(), true);
-		$this->factory->getLogger()->log('error',serialize($postData));
+		// $this->factory->getLogger()->log('error',serialize($postData));
 	   	$rows = array (
 				'bounced' => array (
 						'hashIds' => array (),
