@@ -105,6 +105,21 @@ return array(
                 'path'       => '/leads/list/fields',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:getFields'
             ),
+        	'mautic_api_editpointslead' => array(
+        		'path' => '/leads/{id}/setpoints/{points}',
+        		'controller' => 'MauticLeadBundle:Api\LeadApi:setPoints',
+        		'method'     => 'PATCH'
+        	),
+        	'mautic_api_addpointslead' => array(
+        			'path' => '/leads/{id}/addpoints/{points}',
+        			'controller' => 'MauticLeadBundle:Api\LeadApi:addPoints',
+        			'method' => 'PATCH'
+        	),
+        	'mautic_api_subtractpointslead' => array(
+        			'path' => '/leads/{id}/subtractpoints/{points}',
+        			'controller' => 'MauticLeadBundle:Api\LeadApi:subtractPoints',
+        			'method'     => 'PATCH'
+        	),
             'mautic_api_getleadlists'      => array(
                 'path'       => '/leads/list/lists',
                 'controller' => 'MauticLeadBundle:Api\ListApi:getLists'
