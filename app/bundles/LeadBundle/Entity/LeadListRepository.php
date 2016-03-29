@@ -711,6 +711,39 @@ class LeadListRepository extends CommonRepository
             $alias = $this->generateRandomParameterName();
 
             switch ($details['field']) {
+            	case 'hit_url':
+            		
+            		$func = (($func == 'eq' && $details['filter']) || ($func == 'neq' && !$details['filter'])) ? 'EXISTS' : 'NOT EXISTS';
+            		
+//             		var_dump($func, $details);die(''); //TODO a supp
+            		
+            		
+            		$subqb = $this->_em->getConnection()->createQueryBuilder()
+            		->select('null')
+            		->from(MAUTIC_TABLE_PREFIX.'page_hits', $alias)
+            		->where(
+            				$q->expr()->andX(
+            						$q->expr()->eq($alias.'.url', $exprParameter),
+            						$q->expr()->eq($alias.'.lead_id', 'l.id')
+            						)
+            				);
+            		
+            		// Specific lead
+            		if (!empty($leadId)) {
+            			$subqb->andWhere(
+            					$subqb->expr()->eq($alias.'.lead_id', $leadId)
+            					);
+            		}
+            		
+            		$groupExpr->add(
+            				sprintf('%s (%s)', $func, $subqb->getSQL())
+            				);
+            		
+            		// Filter will always be true and differentiated via EXISTS/NOT EXISTS 
+            		$details['filter'] = true; //TODO verifier a quoi sert se parametre
+            		
+            	break;
+            	
                 case 'dnc_bounced':
                 case 'dnc_unsubscribed':
                     // Special handling of do not email
@@ -908,7 +941,7 @@ class LeadListRepository extends CommonRepository
             // Wrap in a andX for other functions to append
             $expr = $q->expr()->andX($orX);
         }
-
+		
         return $expr;
     }
 

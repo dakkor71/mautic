@@ -320,7 +320,15 @@ class ListModel extends FormModel
                     )
                 ),
                 'operators'  => $operators['bool']
+            ),
+            'hit_url'   => array(
+                'label'      => 'Url', //TODO ajouter la traduction
+                'properties' => array(
+                    'type'     => 'text'
+                ),
+                'operators'  => $operators['text']
             )
+        		
         );
 
         //get list of custom fields
