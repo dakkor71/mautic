@@ -322,7 +322,7 @@ class ListModel extends FormModel
                 'operators'  => $operators['bool']
             ),
             'hit_url'   => array(
-                'label'      => 'Url', //TODO ajouter la traduction
+                'label'      => $this->translator->trans('mautic.page.url'),
                 'properties' => array(
                     'type'     => 'text'
                 ),

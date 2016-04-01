@@ -382,9 +382,6 @@ class LeadListRepository extends CommonRepository
                     $q->setFirstResult($start)
                         ->setMaxResults($limit);
                 }
-				
-//                 var_dump($q->getSQL()); // TODO requette finale
-//                 die('');
 
                 $results = $q->execute()->fetchAll();
                 foreach ($results as $r) {
