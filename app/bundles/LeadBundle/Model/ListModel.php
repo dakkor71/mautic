@@ -326,7 +326,12 @@ class ListModel extends FormModel
                 'properties' => array(
                     'type'     => 'text'
                 ),
-                'operators'  => $operators['text']
+                'operators'  => array(
+                    'include' => array(
+                        '=',
+	                    'like'
+                    )
+                )
             )
         		
         );

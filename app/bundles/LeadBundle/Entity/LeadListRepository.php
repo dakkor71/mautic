@@ -245,6 +245,7 @@ class LeadListRepository extends CommonRepository
      */
     public function getLeadsByList($lists, $args = array())
     {
+    	
         // Return only IDs
         $idOnly = (!array_key_exists('idOnly', $args)) ? false : $args['idOnly'];
         // Return counts
@@ -263,9 +264,11 @@ class LeadListRepository extends CommonRepository
         if (!$lists instanceof PersistentCollection && !is_array($lists) || isset($lists['id'])) {
             $lists = array($lists);
         }
-
+		
+        
         $return = array();
         foreach ($lists as $l) {
+        	
             $leads = ($countOnly) ? 0 : array();
 
             if ($l instanceof LeadList) {
@@ -283,6 +286,7 @@ class LeadListRepository extends CommonRepository
                 $q          = $this->getEntityManager()->getConnection()->createQueryBuilder();
                 $parameters = array();
                 $expr       = $this->getListFilterExpr($filters, $parameters, $q, false);
+                
                 foreach ($parameters as $k => $v) {
                     switch (true) {
                         case is_bool($v):
@@ -378,6 +382,9 @@ class LeadListRepository extends CommonRepository
                     $q->setFirstResult($start)
                         ->setMaxResults($limit);
                 }
+				
+//                 var_dump($q->getSQL()); // TODO requette finale
+//                 die('');
 
                 $results = $q->execute()->fetchAll();
                 foreach ($results as $r) {
@@ -422,7 +429,8 @@ class LeadListRepository extends CommonRepository
                 }
 
                 $q->where($expr);
-
+                var_dump($q->getSQL());
+//                 die('');
                 $results = $q->execute()->fetchAll();
 
                 foreach ($results as $r) {
@@ -712,21 +720,38 @@ class LeadListRepository extends CommonRepository
 
             switch ($details['field']) {
             	case 'hit_url':
-            		
-            		$func = (($func == 'eq' && $details['filter']) || ($func == 'neq' && !$details['filter'])) ? 'EXISTS' : 'NOT EXISTS';
-            		
-//             		var_dump($func, $details);die(''); //TODO a supp
-            		
+					$operand = (($func == 'eq') || ($func == 'like')) ? 'EXISTS' : 'NOT EXISTS';
             		
             		$subqb = $this->_em->getConnection()->createQueryBuilder()
             		->select('null')
-            		->from(MAUTIC_TABLE_PREFIX.'page_hits', $alias)
-            		->where(
-            				$q->expr()->andX(
-            						$q->expr()->eq($alias.'.url', $exprParameter),
-            						$q->expr()->eq($alias.'.lead_id', 'l.id')
-            						)
-            				);
+            		->from(MAUTIC_TABLE_PREFIX.'page_hits', $alias);
+            		
+            		switch($func){
+            			case 'eq':
+            			case 'neq':
+            			$parameters[$parameter]  = $details['filter'];
+            				
+	            		$subqb->where(
+	            				$q->expr()->andX(
+// 	            						$q->expr()->eq($alias.'.url', $details['filter']),
+	            				$q->expr()->eq($alias.'.url', $exprParameter),
+	            						$q->expr()->eq($alias.'.lead_id', 'l.id')
+	            						)
+	            				);
+            			break;
+            			
+            			case 'like':
+            			case '!like':
+            				$details['filter']  = '%'.$details['filter'].'%';
+            				$subqb->where(
+            						$q->expr()->andX(
+            								$q->expr()->like($alias.'.url', $exprParameter),
+            								$q->expr()->eq($alias.'.lead_id', 'l.id')
+            								)
+            						);            				
+            				break;
+            				
+            		}
             		
             		// Specific lead
             		if (!empty($leadId)) {
@@ -736,11 +761,10 @@ class LeadListRepository extends CommonRepository
             		}
             		
             		$groupExpr->add(
-            				sprintf('%s (%s)', $func, $subqb->getSQL())
+            				sprintf('%s (%s)', $operand, $subqb->getSQL())
             				);
-            		
-            		// Filter will always be true and differentiated via EXISTS/NOT EXISTS 
-            		$details['filter'] = true; //TODO verifier a quoi sert se parametre
+//             		var_dump($groupExpr,$parameters[$parameter]);
+//             		die('');
             		
             	break;
             	
@@ -941,7 +965,8 @@ class LeadListRepository extends CommonRepository
             // Wrap in a andX for other functions to append
             $expr = $q->expr()->andX($orX);
         }
-		
+// 		var_dump($expr);
+// 		die('');
         return $expr;
     }
 

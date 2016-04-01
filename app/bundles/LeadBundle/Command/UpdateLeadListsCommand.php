@@ -62,7 +62,7 @@ class UpdateLeadListsCommand extends ModeratedCommand
 
             return 0;
         }
-
+		
         if ($id) {
             $list = $listModel->getEntity($id);
             if ($list !== null) {
@@ -80,9 +80,10 @@ class UpdateLeadListsCommand extends ModeratedCommand
                     'iterator_mode' => true
                 )
             );
-
+            
             while (($l = $lists->next()) !== false) {
                 // Get first item; using reset as the key will be the ID and not 0
+
                 $l = reset($l);
 
                 $output->writeln('<info>'.$translator->trans('mautic.lead.list.rebuild.rebuilding', array('%id%' => $l->getId())).'</info>');
