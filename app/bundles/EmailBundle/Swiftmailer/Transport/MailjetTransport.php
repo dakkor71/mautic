@@ -12,7 +12,6 @@ namespace Mautic\EmailBundle\Swiftmailer\Transport;
 use Mautic\CoreBundle\Factory\MauticFactory;
 
 use Symfony\Component\HttpFoundation\Request;
-use Mailjet\Resources;
 
 /**
  * Class MailjetlTransport
@@ -30,16 +29,49 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 		$this->setAuthMode('login');
 	}
 	
+
+	/**
+	 * Return the max number of to addresses allowed per batch.  If there is no limit, return 0
+	 *
+	 * @return int
+	 */
+	public function getMaxBatchLimit(){
+		// not use with mailjet
+		return 0;
+	}
+	
+	/**
+	 * Get the count for the max number of recipients per batch
+	 *
+	 * @param \Swift_Message $message
+	 * @param int            $toBeAdded Number of emails about to be added
+	 * @param string         $type      Type of emails being added (to, cc, bcc)
+	 *
+	 * @return mixed
+	 */
+	public function getBatchRecipientCount(\Swift_Message $message, $toBeAdded = 1, $type = 'to'){
+		// not use with mailjet
+		return 0;
+	}
+	
+	
 	/**
 	 * Do whatever is necessary to $this->message in order to deliver a batched payload. i.e. add custom headers, etc
 	 *
 	 * @return void
 	 */
-	abstract protected function prepareMessage(){
+	protected function prepareMessage(){
 
 		//add leadIdHash to track this email
-		$header = $this->message->getHeaders()->addTextHeader('X-MJ-CUSTOMID',$this->message->leadIdHash);
+		
+// 		var_dump($this->message->leadIdHash);
 
+		if (isset($this->message->leadIdHash)){
+			$this->message->getHeaders()->addTextHeader('X-MJ-CUSTOMID',$this->message->leadIdHash);
+		}
+		
+// 		var_dump($this->message->getHeaders()->get('X-MJ-CUSTOMID'));
+// 		die('');
 	}
 	
     /**
@@ -63,7 +95,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
 		$postData = json_decode($request->getContent(), true);
-		// $this->factory->getLogger()->log('error',serialize($postData));
+// 		$this->factory->getLogger()->log('error',serialize($postData));
 	   	$rows = array (
 				'bounced' => array (
 						'hashIds' => array (),
@@ -106,7 +138,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 					$type = 'unsubscribed';
 				}
 				
-				if (isset ( $event ['CustomID'] )) {
+				if (isset ( $event ['CustomID'] ) && $event ['CustomID']!=='') {
 					$rows [$type] ['hashIds'] [$event ['CustomID']] = $reason;
 				} else {
 					$rows [$type] ['emails'] [$event ['email']] = $reason;
