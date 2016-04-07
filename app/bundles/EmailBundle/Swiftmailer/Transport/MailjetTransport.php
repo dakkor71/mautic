@@ -62,16 +62,10 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 	 */
 	protected function prepareMessage(){
 
-		//add leadIdHash to track this email
-		
-// 		var_dump($this->message->leadIdHash);
-
+	//add leadIdHash to track this email
 		if (isset($this->message->leadIdHash)){
 			$this->message->getHeaders()->addTextHeader('X-MJ-CUSTOMID',$this->message->leadIdHash);
 		}
-		
-// 		var_dump($this->message->getHeaders()->get('X-MJ-CUSTOMID'));
-// 		die('');
 	}
 	
     /**
@@ -117,7 +111,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 			$events = $postData;
 		} else {
 			// respone must be an array
-			return $rows;
+			return null;
 		}
 		
 		foreach ( $events as $event ) {
