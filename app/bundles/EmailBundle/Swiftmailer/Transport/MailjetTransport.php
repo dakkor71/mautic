@@ -12,201 +12,62 @@ namespace Mautic\EmailBundle\Swiftmailer\Transport;
 use Mautic\CoreBundle\Factory\MauticFactory;
 
 use Symfony\Component\HttpFoundation\Request;
-use Mailjet\Resources;
 
 /**
  * Class MailjetlTransport
  */
-class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCallbackTransport
+class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCallbackTransport
 {
+	
+	/**
+	 * {@inheritdoc}
+	 */
+	public function __construct($host = 'localhost', $port = 25, $security = null)
+	{
+		parent::__construct('in-v3.mailjet.com', 587, 'tls');
+	
+		$this->setAuthMode('login');
+	}
+	
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function getPayload()
-    {
-    	$payload=array();
+	/**
+	 * Return the max number of to addresses allowed per batch.  If there is no limit, return 0
+	 *
+	 * @return int
+	 */
+	public function getMaxBatchLimit(){
+		// not use with mailjet
+		return 0;
+	}
+	
+	/**
+	 * Get the count for the max number of recipients per batch
+	 *
+	 * @param \Swift_Message $message
+	 * @param int            $toBeAdded Number of emails about to be added
+	 * @param string         $type      Type of emails being added (to, cc, bcc)
+	 *
+	 * @return mixed
+	 */
+	public function getBatchRecipientCount(\Swift_Message $message, $toBeAdded = 1, $type = 'to'){
+		// not use with mailjet
+		return 0;
+	}
+	
+	
+	/**
+	 * Do whatever is necessary to $this->message in order to deliver a batched payload. i.e. add custom headers, etc
+	 *
+	 * @return void
+	 */
+	protected function prepareMessage(){
 
-        $message = $this->messageToArray();
-
-        $payload['FromEmail']=$message['from']['email'];
-        $payload['FromName']=(is_null($message['from']['name'])?$message['from']['email']:$message['from']['name']);
-
-        $payload['Recipients']=array();
-        $payload['To']=array();
-        $payload['Cc']=array();
-        $payload['Bcc']=array();
-
-        foreach ($message['recipients']['to'] as $aT => $dataTo){
-        	$payload['Recipients'][]=array('Email'=>$dataTo['email'],'Name'=>(is_null($dataTo['name'])?$dataTo['email']:$dataTo['name']));
-        	$payload['To'][]=$dataTo['email'];
-        }
-        foreach ($message['recipients']['cc'] as $aT => $dataCc){
-        	$payload['Recipients'][]=array('Email'=>$dataCc['email'],'Name'=>(is_null($dataCc['name'])?$dataCc['email']:$dataCc['name']));
-        	$payload['Cc'][]=$dataCc['email'];
-        }
-        foreach ($message['recipients']['bcc'] as $aT => $dataBcc){
-        	$payload['Recipients'][]=array('Email'=>$dataBcc['email'],'Name'=>(is_null($dataBcc['name'])?$dataBcc['email']:$dataBcc['name']));
-        	$payload['Bcc'][]=$dataBcc['email'];
-        }        
-        
-        
-//         $metadata = $this->getMetadata();
-
-        if (isset($this->message->leadIdHash)) {
-        	$payload['Mj-CustomID']=$this->message->leadIdHash;
-        }
-        
-//         var_dump(array($this->message->leadIdHash=>$payload['To'][0]));
-        
-        // Set the reply to
-        if (!empty($message['replyTo'])) {
-        	if (!isset( $payload['headers'])){ $payload['headers']=array();}
-            $payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
-        }
-        
-        if (!empty($message['file_attachments'])) {
-        	//TODO not used ATM
-//         	if (!isset( $payload['headers'])){ $payload['headers']=array();}
-//         	$payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
-        }       
-
-        if (!empty($message['replyTo'])) {
-        	if (!isset( $payload['headers'])){ $payload['headers']=array();}
-        	$payload['Headers']['Reply-To'][] = $message['replyTo']['email'];
-        }        
-        
-        $payload['Subject']=$message['subject'];
-        
-        $payload['Text-part']=$message['text'];
-        $payload['Html-part']=$message['html'];
-// 		var_dump($payload);
-// 		die('');
-        return ($payload);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getHeaders()
-    {
-    
-    }
-    
-    /**
-     * {@inheritdoc}
-     */
-    protected function getApiEndpoint()
-    {
-    	
-    }
-    
-    /**
-     * Start this Transport mechanism.
-     */
-    public function start()
-    {
-        // Make an API call to the ping endpoint
-
-        $this->started = true;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @param $response
-     * @param $info
-     *
-     * @return array
-     * @throws \Swift_TransportException
-     */
-    protected function handlePostResponse($response, $info)
-    {
-		/*
-        if (!$this->started) {
-            // Check the response for PONG!
-            if ('PONG!' !== $response) {
-                $this->throwException('MailJet failed to authenticate');
-            }
-
-            return true;
-        }
-        */
-                
-        if (!is_array($response)){
-        	$this->throwException('MailJet not valid response');
-        }
-		
-        // mailjet never return failled sended email... this information is within webhook response.
-        return array();
-        // sous cette ligne, traitement des eventuel bounce par Mandrill lors de l'envoi //TODO virer tout le code en dessous.
-        
-        
-        
-        $return     = array();
-        $hasBounces = false;
-        $bounces    = array(
-            'bounced'      => array(
-                'emails' => array()
-            ),
-            'unsubscribed' => array(
-                'emails' => array()
-            )
-        );
-        $metadata   = $this->getMetadata();
-
-        if (is_array($response)) {
-            if (isset($response['status']) && $response['status'] == 'error') {
-                $parsedResponse = $response['message'];
-                $error          = true;
-            } else {
-                foreach ($response as $stat) {
-                    if (in_array($stat['status'], array('rejected', 'invalid'))) {
-                        $return[]       = $stat['email'];
-                        $parsedResponse = "{$stat['email']} => {$stat['status']}\n";
-
-                        if ('invalid' == $stat['status']) {
-                            $stat['reject_reason'] = 'invalid';
-                        }
-
-                        // Extract lead ID from metadata if applicable
-                        $leadId = (!empty($metadata[$stat['email']]['leadId'])) ? $metadata[$stat['email']]['leadId'] : null;
-
-                        if (in_array($stat['reject_reason'], array('hard-bounce', 'soft-bounce', 'reject', 'spam', 'invalid', 'unsub'))) {
-                            $hasBounces = true;
-                            $type       = ('unsub' == $stat['reject_reason']) ? 'unsubscribed' : 'bounced';
-
-                            $bounces[$type]['emails'][$stat['email']] = array(
-                                'leadId' => $leadId,
-                                'reason' => ('unsubscribed' == $type) ? $type : str_replace('-', '_', $stat['reject_reason'])
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
-        if ($evt = $this->getDispatcher()->createResponseEvent($this, $parsedResponse, ($info['http_code'] == 200))) {
-            $this->getDispatcher()->dispatchEvent($evt, 'responseReceived');
-        }
-
-        // Parse bounces if applicable
-        if ($hasBounces) {
-            /** @var \Mautic\EmailBundle\Model\EmailModel $emailModel */
-            $emailModel = $this->factory->getModel('email');
-            $emailModel->processMailerCallback($bounces);
-        }
-
-        if ($response === false) {
-            $this->throwException('Unexpected response');
-        } elseif (!empty($error)) {
-            $this->throwException('Mandrill error');
-        }
-
-        return $return;
-    }
-
-
+	//add leadIdHash to track this email
+		if (isset($this->message->leadIdHash)){
+			$this->message->getHeaders()->addTextHeader('X-MJ-CUSTOMID',$this->message->leadIdHash);
+		}
+	}
+	
     /**
      * Returns a "transport" string to match the URL path /mailer/{transport}/callback
      *
@@ -216,29 +77,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     {
         return 'mailjet';
     }
-
-    /**
-     * @return int
-     */
-    public function getMaxBatchLimit()
-    {
-        // Not used by Mailjet API
-        return 0;
-    }
-
-    /**
-     * @param \Swift_Message $message
-     * @param int            $toBeAdded
-     * @param string         $type
-     *
-     * @return int
-     */
-    public function getBatchRecipientCount(\Swift_Message $message, $toBeAdded = 1, $type = 'to')
-    {
-        // Not used by Mailjet API
-        return 0;
-    }
-
+    
     /**
      * Handle response
      *
@@ -250,7 +89,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
 		$postData = json_decode($request->getContent(), true);
-		// $this->factory->getLogger()->log('error',serialize($postData));
+// 		$this->factory->getLogger()->log('error',serialize($postData));
 	   	$rows = array (
 				'bounced' => array (
 						'hashIds' => array (),
@@ -272,7 +111,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 			$events = $postData;
 		} else {
 			// respone must be an array
-			return $rows;
+			return null;
 		}
 		
 		foreach ( $events as $event ) {
@@ -293,7 +132,7 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 					$type = 'unsubscribed';
 				}
 				
-				if (isset ( $event ['CustomID'] )) {
+				if (isset ( $event ['CustomID'] ) && $event ['CustomID']!=='') {
 					$rows [$type] ['hashIds'] [$event ['CustomID']] = $reason;
 				} else {
 					$rows [$type] ['emails'] [$event ['email']] = $reason;
@@ -303,21 +142,5 @@ class MailjetTransport extends AbstractTokenHttpTransport implements InterfaceCa
 		return $rows;
     }
     
-    protected function post($settings = array())
-    {
-		$payload = empty ( $settings ['payload'] ) ? $this->getPayload () : $settings ['payload'];
-
-		$mj = new \Mailjet\Client($this->getUsername (), $this->getPassword ());
-		$mj->setSecureProtocol(false);
-// 		try {
-			$response = $mj->post(Resources::$Email, ['body' => $payload]);
-			return $this->handlePostResponse ( $response->getData(), $info =null);
-// 		}
-// 		catch(Exception $e){
-// 			var_dump($e);
-// 			return false;
-// 		}
-		
-    }
     
 }
