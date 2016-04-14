@@ -503,6 +503,9 @@ class LeadListRepository extends CommonRepository
                         }
                         break;
                     case 'date':
+                        if ($details['filter'] === "(birthday)") {
+                            $details['filter'] = '-'.date("m-d");
+                        }
                         if (!$columnType instanceof DateType && !$columnType instanceof UTCDateTimeType) {
                             $field = $formatter->toDate($field);
                         }
