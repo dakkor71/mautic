@@ -65,9 +65,7 @@ class SubmissionModel extends CommonFormModel
         }
 
         //clean the referer by removing mauticError and mauticMessage
-		if (strpos($referer, 'test.html') === false) {
-			$referer = InputHelper::url($referer, null, null, array('mauticError', 'mauticMessage'));
-        }
+		$referer = InputHelper::url($referer, null, null, array('mauticError', 'mauticMessage'));
 		$submission->setReferer($referer);
 
         $fields           = $form->getFields();
@@ -88,7 +86,6 @@ class SubmissionModel extends CommonFormModel
                 'type'  => $type,
                 'alias' => $alias
             );
-			
             if (in_array($type, array('button', 'freetext'))) {
                 //don't save items that don't have a value associated with it
                 continue;
@@ -133,7 +130,6 @@ class SubmissionModel extends CommonFormModel
                         $value = InputHelper::_($value, 'clean');
                     }
                 }
-				
                 if (isset($params['valueConstraints']) && is_callable($params['valueConstraints'])) {
                     $customErrors = call_user_func_array($params['valueConstraints'], array($f, $value));
                     if (!empty($customErrors)) {
