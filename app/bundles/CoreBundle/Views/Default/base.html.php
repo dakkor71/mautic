@@ -44,6 +44,7 @@
 							$copyright=$view['translator']->trans('mautic.core.copyright', array('%date%' => date('Y')));
 							$copyright=str_replace('Mautic', 'Mautic / <a href="http://www.webmecanik.com">Webmecanik</a>',$copyright);
 						?>
+						<a href="https://webmecanik.automation.webmecanik.com/mtracking.gif"></a>
                         <div class="col-xs-6 text-muted"><?php echo $copyright ?></div>  <?php // version_atmt ?>
                         <div class="col-xs-6 text-muted text-right small">v<?php echo $view['formatter']->getVersion(); ?></div>
                     </div>
