@@ -1212,4 +1212,21 @@ class LeadModel extends FormModel
 
         return ($operator === null) ? $operatorOptions : $operatorOptions[$operator];
     }
+    
+    public function getEntitiesLight(array $args = array())
+    {
+    	//set the translator
+    	 $repo = $this->em->getRepository('MauticLeadBundle:Lead');
+    
+    	if ($repo !== null) {
+    		$repo->setTranslator($this->translator);
+    		$repo->setCurrentUser(
+    				$this->factory->getUser()
+    				);
+    		return $repo->getEntitiesLight($args);
+    	}
+    	
+    
+    	return array();
+    }
 }
