@@ -1597,7 +1597,7 @@ class LeadController extends FormController
     			$row[] = $formatter->_($leads[$i]['website'], 'url', true);
     			$row[] = $formatter->_($leads[$i]['country'], 'string', true);
     			$row[] = $formatter->_($leads[$i]['points'], 'int', true);
-    			$row[] = $formatter->_($leads[$i]['last_active'], 'date', true);
+    			$row[] = $formatter->_($leads[$i]['date_identified'], 'date', true);
 				
     			fputcsv($handle, $row);
     		}
