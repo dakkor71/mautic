@@ -40,7 +40,7 @@ class PageController extends CommonController
 		
 		return $this->delegateView(array(
 			'viewParameters' => $viewParameters,
-			'contentTemplate' => 'GoToWebinarBundle:page:index.html.php',
+			'contentTemplate' => 'GoToWebinarBundle:Page:index.html.php',
 			'passthroughVars' => array(
 				'activeLink'    => '#plugin_gotowebinar_menu_index',
 				'mauticContent' => 'gtwPageInit',
