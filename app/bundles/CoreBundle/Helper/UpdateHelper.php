@@ -125,7 +125,7 @@ class UpdateHelper
                 'installSource' => $this->factory->getParameter('install_source', 'Mautic')
             );
 
-            $this->connector->post('https://updates.mautic.org/stats/send', $data, null, 10);
+            $this->connector->post('https://updates.mautic.org/stats/send', $data, array(), 10);
             */
         } catch (\Exception $exception) {
             // Not so concerned about failures here, move along
@@ -139,7 +139,7 @@ class UpdateHelper
                 'stability'  => $this->factory->getParameter('update_stability')
             );
 
-            $data    = $this->connector->post('http://update.webmecanik.com/atmt_update.php', $appData, null, 10); // version_atmt
+            $data    = $this->connector->post('http://update.webmecanik.com/atmt_update.php', $appData, array(), 10); // version_atmt
             $update  = json_decode($data->body);
         } catch (\Exception $exception) {
             // Log the error
