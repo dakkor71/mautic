@@ -131,6 +131,7 @@ if ($permissions['lead:leads:editown'] || $permissions['lead:leads:editother']) 
     	)
     )
 );
+}
 ?>
 
 <div class="panel panel-default bdr-t-wdh-0 mb-0">
