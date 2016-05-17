@@ -128,6 +128,36 @@ final class LeadEvents
      */
     const CURRENT_LEAD_CHANGED   = 'mautic.current_lead_changed';
 
+	/**
+     * The mautic.list_filters_choices_on_generate event is dispatched when the choices for list filters are generated
+     *
+     * The event listener receives a
+     * Mautic\LeadBundle\Event\LeadListFiltersChoicesEvent instance.
+     *
+     * @var string
+     */
+	const LIST_FILTERS_CHOICES_ON_GENERATE = 'mautic.list_filters_choices_on_generate';
+	
+	/**
+     * The mautic.list_filters_operators_on_generate event is dispatched when the operators for list filters are generated
+     *
+     * The event listener receives a
+     * Mautic\LeadBundle\Event\LeadListFiltersOperatorsEvent instance.
+     *
+     * @var string
+     */
+	const LIST_FILTERS_OPERATORS_ON_GENERATE = 'mautic.list_filters_operators_on_generate';
+	
+	/**
+     * The mautic.list_filters_on_filtering event is dispatched when the lists are updated
+     *
+     * The event listener receives a
+     * Mautic\LeadBundle\Event\LeadListFilteringEvent instance.
+     *
+     * @var string
+     */
+	const LIST_FILTERS_ON_FILTERING = 'mautic.list_filters_on_filtering';
+	
     /**
      * The mautic.lead_list_pre_save event is dispatched right before a lead_list is persisted.
      *

@@ -20,13 +20,17 @@ use Mautic\CoreBundle\Doctrine\Type\UTCDateTimeType;
 use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\CoreBundle\Helper\InputHelper;
+use Mautic\CoreBundle\Factory\MauticFactory;
+use Mautic\LeadBundle\LeadEvents;
+use Mautic\LeadBundle\Event\LeadListFiltersOperatorsEvent;
+use Mautic\LeadBundle\Event\LeadListFilteringEvent;
 
 /**
  * LeadListRepository
  */
 class LeadListRepository extends CommonRepository
 {
-
+	
     /**
      * {@inheritdoc}
      *
@@ -709,171 +713,237 @@ class LeadListRepository extends CommonRepository
 
             // Generate a unique alias
             $alias = $this->generateRandomParameterName();
+			
+			// Apply custom filter and operator
+			$dispatcher = $this->factory->getDispatcher();
+			$isFilteringDone = false;
+			if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_ON_FILTERING)) {
+				
+				$event = new LeadListFilteringEvent($details, $leadId, $alias, $func, $q, $this->_em);
+				$dispatcher->dispatch(LeadEvents::LIST_FILTERS_ON_FILTERING, $event);
+				
+				// If filtering matched, insert sub-query
+				$isFilteringDone = $event->isFilteringDone();
+				if ($isFilteringDone) {
+					$groupExpr->add($event->getSubQuery());
+				}
+			}
+			
+			if ( !$isFilteringDone) {
+				switch ($details['field']) {
+					
+					case 'hit_url':
+						$operand = (($func == 'eq') || ($func == 'like')) ? 'EXISTS' : 'NOT EXISTS';
+						
+						$subqb = $this->_em->getConnection()->createQueryBuilder()
+						->select('null')
+						->from(MAUTIC_TABLE_PREFIX.'page_hits', $alias);
+						
+						switch($func){
+							case 'eq':
+							case 'neq':
+							$parameters[$parameter]  = $details['filter'];
+								
+							$subqb->where(
+									$q->expr()->andX(
+										// $q->expr()->eq($alias.'.url', $details['filter']),
+										$q->expr()->eq($alias.'.url', $exprParameter),
+										$q->expr()->eq($alias.'.lead_id', 'l.id')
+									)
+								);
+							break;
+							
+							case 'like':
+							case '!like':
+								$details['filter']  = '%'.$details['filter'].'%';
+								$subqb->where(
+										$q->expr()->andX(
+												$q->expr()->like($alias.'.url', $exprParameter),
+												$q->expr()->eq($alias.'.lead_id', 'l.id')
+												)
+										);            				
+								break;
+								
+						}
+						
+						// Specific lead
+						if (!empty($leadId)) {
+							$subqb->andWhere(
+									$subqb->expr()->eq($alias.'.lead_id', $leadId)
+									);
+						}
+						
+						$groupExpr->add(
+								sprintf('%s (%s)', $operand, $subqb->getSQL())
+								);
+						
+					break;
+					
+					case 'dnc_bounced':
+					case 'dnc_unsubscribed':
+						// Special handling of do not email
 
-            switch ($details['field']) {
-                case 'dnc_bounced':
-                case 'dnc_unsubscribed':
-                    // Special handling of do not email
+						$column = str_replace('dnc_', '', $details['field']);
 
-                    $column = str_replace('dnc_', '', $details['field']);
+						$func = (($func == 'eq' && $details['filter']) || ($func == 'neq' && !$details['filter'])) ? 'EXISTS' : 'NOT EXISTS';
 
-                    $func = (($func == 'eq' && $details['filter']) || ($func == 'neq' && !$details['filter'])) ? 'EXISTS' : 'NOT EXISTS';
+						$subqb = $this->_em->getConnection()->createQueryBuilder()
+							->select('null')
+							->from(MAUTIC_TABLE_PREFIX.'email_donotemail', $alias)
+							->where(
+								$q->expr()->andX(
+									$q->expr()->eq($alias.'.'.$column, $exprParameter),
+									$q->expr()->eq($alias.'.lead_id', 'l.id')
+								)
+							);
 
-                    $subqb = $this->_em->getConnection()->createQueryBuilder()
-                        ->select('null')
-                        ->from(MAUTIC_TABLE_PREFIX.'email_donotemail', $alias)
-                        ->where(
-                            $q->expr()->andX(
-                                $q->expr()->eq($alias.'.'.$column, $exprParameter),
-                                $q->expr()->eq($alias.'.lead_id', 'l.id')
-                            )
-                        );
+						// Specific lead
+						if (!empty($leadId)) {
+							$subqb->andWhere(
+								$subqb->expr()->eq($alias.'.lead_id', $leadId)
+							);
+						}
 
-                    // Specific lead
-                    if (!empty($leadId)) {
-                        $subqb->andWhere(
-                            $subqb->expr()->eq($alias.'.lead_id', $leadId)
-                        );
-                    }
+						$groupExpr->add(
+							sprintf('%s (%s)', $func, $subqb->getSQL())
+						);
 
-                    $groupExpr->add(
-                        sprintf('%s (%s)', $func, $subqb->getSQL())
-                    );
+						// Filter will always be true and differentiated via EXISTS/NOT EXISTS
+						$details['filter'] = true;
 
-                    // Filter will always be true and differentiated via EXISTS/NOT EXISTS
-                    $details['filter'] = true;
+						break;
 
-                    break;
+					case 'leadlist':
+					case 'tags':
+						// Special handling of lead lists and tags
+						$func  = in_array($func, array('eq', 'in')) ? 'EXISTS' : 'NOT EXISTS';
 
-                case 'leadlist':
-                case 'tags':
-                    // Special handling of lead lists and tags
-                    $func  = in_array($func, array('eq', 'in')) ? 'EXISTS' : 'NOT EXISTS';
+						if ($details['field'] == 'leadlist') {
+							$table  = 'lead_lists_leads';
+							$column = 'leadlist_id';
+						} else {
+							$table  = 'lead_tags_xref';
+							$column = 'tag_id';
+						}
 
-                    if ($details['field'] == 'leadlist') {
-                        $table  = 'lead_lists_leads';
-                        $column = 'leadlist_id';
-                    } else {
-                        $table  = 'lead_tags_xref';
-                        $column = 'tag_id';
-                    }
+						// DBAL requires an array for in()
+						$ignoreAutoFilter = true;
+						foreach ($details['filter'] as &$value) {
+							$value = (int) $value;
+						}
 
-                    // DBAL requires an array for in()
-                    $ignoreAutoFilter = true;
-                    foreach ($details['filter'] as &$value) {
-                        $value = (int) $value;
-                    }
+						$subExpr = $q->expr()->andX(
+							$q->expr()->in(sprintf('%s.%s', $alias, $column), $details['filter']),
+							$q->expr()->eq($alias.'.lead_id', 'l.id')
+						);
 
-                    $subExpr = $q->expr()->andX(
-                        $q->expr()->in(sprintf('%s.%s', $alias, $column), $details['filter']),
-                        $q->expr()->eq($alias.'.lead_id', 'l.id')
-                    );
+						$subqb = $this->_em->getConnection()->createQueryBuilder()
+							->select('null')
+							->from(MAUTIC_TABLE_PREFIX.$table, $alias);
 
-                    $subqb = $this->_em->getConnection()->createQueryBuilder()
-                        ->select('null')
-                        ->from(MAUTIC_TABLE_PREFIX.$table, $alias);
+						// Specific lead
+						if (!empty($leadId)) {
+							$subExpr->add(
+								$subqb->expr()->eq($alias.'.lead_id', $leadId)
+							);
+						}
 
-                    // Specific lead
-                    if (!empty($leadId)) {
-                        $subExpr->add(
-                            $subqb->expr()->eq($alias.'.lead_id', $leadId)
-                        );
-                    }
+						if ($table == 'lead_lists_leads') {
+							$falseParameter = $this->generateRandomParameterName();
+							$subExpr->add(
+								$subqb->expr()->eq($alias.'.manually_removed', ":$falseParameter")
+							);
+							$parameters[$falseParameter] = false;
+						}
 
-                    if ($table == 'lead_lists_leads') {
-                        $falseParameter = $this->generateRandomParameterName();
-                        $subExpr->add(
-                            $subqb->expr()->eq($alias.'.manually_removed', ":$falseParameter")
-                        );
-                        $parameters[$falseParameter] = false;
-                    }
+						$subqb->where($subExpr);
 
-                    $subqb->where($subExpr);
+						$groupExpr->add(
+							sprintf('%s (%s)', $func, $subqb->getSQL())
+						);
 
-                    $groupExpr->add(
-                        sprintf('%s (%s)', $func, $subqb->getSQL())
-                    );
+						break;
+					default:
+						switch ($func) {
+							case 'in':
+							case 'notIn':
+								foreach ($details['filter'] as &$value) {
+									$value = $q->expr()->literal(
+										InputHelper::clean($value)
+									);
+								}
+								$groupExpr->add(
+									$q->expr()->$func($field, $details['filter'])
+								);
 
-                    break;
-                default:
-                    switch ($func) {
-                        case 'in':
-                        case 'notIn':
-                            foreach ($details['filter'] as &$value) {
-                                $value = $q->expr()->literal(
-                                    InputHelper::clean($value)
-                                );
-                            }
-                            $groupExpr->add(
-                                $q->expr()->$func($field, $details['filter'])
-                            );
+								$ignoreAutoFilter = true;
 
-                            $ignoreAutoFilter = true;
+								break;
+							case 'between':
+							case 'notBetween':
+								// Filter should be saved with double || to separate options
+								$parameter2              = $this->generateRandomParameterName();
+								$parameters[$parameter]  = $details['filter'][0];
+								$parameters[$parameter2] = $details['filter'][1];
+								$exprParameter2          = ":$parameter2";
+								$ignoreAutoFilter        = true;
 
-                            break;
-                        case 'between':
-                        case 'notBetween':
-                            // Filter should be saved with double || to separate options
-                            $parameter2              = $this->generateRandomParameterName();
-                            $parameters[$parameter]  = $details['filter'][0];
-                            $parameters[$parameter2] = $details['filter'][1];
-                            $exprParameter2          = ":$parameter2";
-                            $ignoreAutoFilter        = true;
+								if ($func == 'between') {
+									$groupExpr->add(
+										$q->expr()->andX(
+											$q->expr()->gte($field, $exprParameter),
+											$q->expr()->lt($field, $exprParameter2)
+										)
+									);
+								} else {
+									$groupExpr->add(
+										$q->expr()->andX(
+											$q->expr()->lt($field, $exprParameter),
+											$q->expr()->gte($field, $exprParameter2)
+										)
+									);
+								}
 
-                            if ($func == 'between') {
-                                $groupExpr->add(
-                                    $q->expr()->andX(
-                                        $q->expr()->gte($field, $exprParameter),
-                                        $q->expr()->lt($field, $exprParameter2)
-                                    )
-                                );
-                            } else {
-                                $groupExpr->add(
-                                    $q->expr()->andX(
-                                        $q->expr()->lt($field, $exprParameter),
-                                        $q->expr()->gte($field, $exprParameter2)
-                                    )
-                                );
-                            }
+								break;
+							case 'notEmpty':
+								$groupExpr->add(
+									$q->expr()->andX(
+										$q->expr()->isNotNull($field),
+										$q->expr()->neq($field, $q->expr()->literal(''))
+									)
+								);
 
-                            break;
-                        case 'notEmpty':
-                            $groupExpr->add(
-                                $q->expr()->andX(
-                                    $q->expr()->isNotNull($field),
-                                    $q->expr()->neq($field, $q->expr()->literal(''))
-                                )
-                            );
+								break;
+							case 'empty':
+								$groupExpr->add(
+									$q->expr()->orX(
+										$q->expr()->isNull($field),
+										$q->expr()->eq($field, $q->expr()->literal(''))
+									)
+								);
 
-                            break;
-                        case 'empty':
-                            $groupExpr->add(
-                                $q->expr()->orX(
-                                    $q->expr()->isNull($field),
-                                    $q->expr()->eq($field, $q->expr()->literal(''))
-                                )
-                            );
+								break;
+							case 'neq':
+								$groupExpr->add(
+									$q->expr()->orX(
+										$q->expr()->isNull($field),
+										$q->expr()->neq($field, $exprParameter)
+									)
+								);
 
-                            break;
-                        case 'neq':
-                            $groupExpr->add(
-                                $q->expr()->orX(
-                                    $q->expr()->isNull($field),
-                                    $q->expr()->neq($field, $exprParameter)
-                                )
-                            );
-
-                            break;
-                        case 'like':
-                        case 'notLike':
-                            if (strpos($details['filter'], '%') === false) {
-                                $details['filter'] = '%'.$details['filter'].'%';
-                            }
-                        default:
-                            $groupExpr->add($q->expr()->$func($field, $exprParameter));
-                            break;
-                    }
-            }
+								break;
+							case 'like':
+							case 'notLike':
+								if (strpos($details['filter'], '%') === false) {
+									$details['filter'] = '%'.$details['filter'].'%';
+								}
+							default:
+								$groupExpr->add($q->expr()->$func($field, $exprParameter));
+								break;
+						}
+					break;
+				}
+			}
 
             if (!$ignoreAutoFilter) {
                 if (!is_array($details['filter'])) {
@@ -1009,7 +1079,15 @@ class LeadListRepository extends CommonRepository
                     'negate_expr' => 'in'
                 ),
         );
-
+		
+		// Add custom filters operators
+		$dispatcher = $this->factory->getDispatcher();
+		if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE)) {
+			$event = new LeadListFiltersOperatorsEvent($operatorOptions, $this->factory->getTranslator());
+			$dispatcher->dispatch(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE, $event);
+			$operatorOptions = $event->getOperators();
+		}
+		
         return ($operator === null) ? $operatorOptions : $operatorOptions[$operator];
     }
 
