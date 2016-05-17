@@ -727,7 +727,7 @@ class EventModel extends CommonFormModel
             return false;
         }
 
-        if ($event['eventType'] == 'condition') {
+        if ($event['eventType'] == 'condition' || $event['eventType'] == 'action') {
             $allowNegative = true;
         }
 
@@ -1658,7 +1658,6 @@ class EventModel extends CommonFormModel
         if ($action instanceof Event) {
             $action = $action->convertToArray();
         }
-
         if ($action['decisionPath'] == 'no' && !$allowNegative) {
             $logger->debug('CAMPAIGN: '.ucfirst($action['eventType']).' is attached to a negative path which is not allowed');
 
