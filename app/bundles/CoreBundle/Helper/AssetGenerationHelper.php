@@ -232,8 +232,8 @@ class AssetGenerationHelper
                 $files->sort($sort);
 
                 foreach ($files as $file) {
-                    $fullPath = $file->getPathname();
-                    $relPath  = str_replace($rootPath, '', $file->getPathname());
+                    $fullPath = str_replace('\\', '/', $file->getPathname());
+                    $relPath  = str_replace($rootPath, '', $fullPath);
                     if (strpos($relPath, '/') === 0) {
                         $relPath = substr($relPath, 1);
                     }
