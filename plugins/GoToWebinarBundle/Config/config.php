@@ -31,23 +31,6 @@ return array(
 			'plugin.gotowebinar.route.main.ajax.checkapi' => array(
 				'path'       => '/gotowebinar/ajax/check-api',
 				'controller' => 'GoToWebinarBundle:Ajax:checkAPI'
-			),
-			'plugin.gotowebinar.route.main.page' => array(
-				'path' => '/gotowebinar',
-				'controller' => 'GoToWebinarBundle:Page:index'
-			)
-		)
-	),
-	
-	'menu' => array(
-		'main' => array(
-			'priority' => 60,
-			'items' => array(
-				'plugin.gotowebinar.menu.index' => array(
-					'id' => 'plugin_gotowebinar_menu_index',
-					'route' => 'plugin.gotowebinar.route.main.page',
-					'iconClass' => 'fa-video-camera'
-				)
 			)
 		)
 	),
@@ -61,6 +44,12 @@ return array(
 			'plugin.gotowebinar.event.formsubscriber' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\FormSubscriber',
 				'arguments' => array('doctrine.orm.entity_manager', 'plugin.gotowebinar.service.gtwapi', 'kernel', 'translator')
+			),
+			'plugin.gotowebinar.lead.subscriber' => array(
+				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\LeadSubscriber'
+			),
+			'plugin.gotowebinar.campaignevent.subscriber' => array(
+				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\CampaignSubscriber'
 			)
 		),
 		
@@ -76,6 +65,11 @@ return array(
 			'plugin.gotowebinar.formtype.pushleadtoapi' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\Form\Type\PushLeadToApiType',
 				'alias' => 'gotowebinar_formtype_formaction'
+			),
+			'plugin.gotowebinar.formtype.campaignevent' => array(
+				'class' => 'MauticPlugin\GoToWebinarBundle\Form\Type\CampaignEventGotowebinarType',
+				'alias' => 'gotowebinar_formtype_campaignevent',
+				'arguments' => array('translator', 'mautic.factory')
 			)
 		),
 		
@@ -97,12 +91,7 @@ return array(
 			'plugin.gotowebinar.service.gtwsync' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\Services\GtwSyncService',
 				'alias' => 'gotowebinar_service_gtwsync',
-				'arguments' => array('plugin.gotowebinar.service.gtwapi', 'plugin.gotowebinar.service.leads')
-			),
-			'plugin.gotowebinar.service.leads' => array(
-				'class' => 'MauticPlugin\GoToWebinarBundle\Services\LeadsService',
-				'alias' => 'gotowebinar_service_leads',
-				'arguments' => array('doctrine.orm.entity_manager', 'database_connection', 'mautic.factory')
+				'arguments' => array('plugin.gotowebinar.service.gtwapi', 'mautic.factory')
 			)
 		)
 	),

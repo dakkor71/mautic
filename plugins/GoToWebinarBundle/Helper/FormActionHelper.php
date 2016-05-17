@@ -25,7 +25,7 @@ class FormActionHelper
 	private $gtwSyncService;
 	
 	/**
-	 * Injection de dépendance : le helper a besoin du service "GoToWebinar API"
+	 * Injection de dépendance : le helper a besoin des service "GoToWebinar API" et "Sync"
 	 */
 	public function __construct(GtwApiService $gtwApiService, GtwSyncService $gtwSyncService)
 	{
@@ -140,11 +140,12 @@ class FormActionHelper
 						$webinarKey = $webinar['webinarKey'];
 						$isSubscribed = $gtwApiService->subscribeToWebinar($webinarKey, $email, $firstname, $lastname);
 						
-						// Si l'inscription a réussi, ajout d'un tag au lead
+						// Si l'inscription a réussi, écriture d'un événement dans la timeline du lead
 						if ($isSubscribed) {
-							$gtwSyncService->registerSingleLeadToWebinar($email, $webinarKey);
+							$webinarSlug = $gtwApiService->getWebinarSlug($webinarKey);
+							$webinarModel = $factory->getModel('plugin.GoToWebinar.Webinar');
+							$webinarModel->addEvent($email, $webinarSlug, 'registered');
 						}
-						
 					}
 				}
 			}

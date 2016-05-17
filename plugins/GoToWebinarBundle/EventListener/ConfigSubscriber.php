@@ -22,7 +22,6 @@ class ConfigSubscriber extends CommonSubscriber
 	{
 		return array(
 			ConfigEvents::CONFIG_ON_GENERATE => array('onConfigGenerate', 0)
-			/*ConfigEvents::CONFIG_PRE_SAVE => array('onConfigSave', 0)*/
 		);
 	}
 	
@@ -39,5 +38,3 @@ class ConfigSubscriber extends CommonSubscriber
 	}
 	
 }
-
-?>

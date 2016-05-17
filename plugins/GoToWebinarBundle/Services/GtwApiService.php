@@ -105,15 +105,23 @@ class GtwApiService
      */
 	public function getWebinarList($onlyFutures, $onlySubjects = true) 
 	{
+		$url = '/organizers/' . $this->organizerKey . '/';
+		
+		if ($onlyFutures) {
+			$url .= 'upcomingWebinars';
+		} 
+		else {
+			$currentYear = date('Y');
+			$fromTime = ($currentYear - 10) . '-01-01T00:00:00Z';
+			$toTime = ($currentYear + 10) . '-01-01T00:00:00Z';
+			$url .= 'historicalWebinars?fromTime=' . rawurlencode($fromTime) . '&toTime=' . rawurlencode($toTime);
+		}
+
+		$this->webinars = $this->_callAPI($url);
+		
 		$webinarlist = array();
-		
-		$action = $onlyFutures ? 'upcomingWebinars' : 'webinars';
-		
-		$this->webinars = $this->_callAPI('/organizers/' . $this->organizerKey . '/' . $action);
-		$this->_fixWebinarsKeys();
-		$this->_formatWebinarsTimes();
-		
 		if (is_array($this->webinars)) {
+			
 			if ($onlySubjects) {
 				foreach ($this->webinars as $webinar) {
 					$webinarlist[$webinar->webinarKey] = $webinar->subject;
@@ -252,7 +260,12 @@ class GtwApiService
 		if (is_object($jsonResult) && property_exists($jsonResult, 'err')) {
 			$this->_throwError($jsonResult->message, $jsonResult->err);
 		}
-
+		
+		// Autre erreur retournée par l'API ? (quota dépassé, ...)
+		if (is_object($jsonResult) && property_exists($jsonResult, 'errorCode')) {
+			$this->_throwError($jsonResult->description, $jsonResult->errorCode);
+		}
+		
 		return $jsonResult;
 	}
 	
@@ -291,7 +304,7 @@ class GtwApiService
 		}
 		curl_close($curl);
 		
-		$jsonResult = json_decode($rawResult);
+		$jsonResult = json_decode($rawResult, false, 512, JSON_BIGINT_AS_STRING);
 		
 		// Echec du décodage JSON ?
 		if ($jsonResult === null) {
@@ -299,69 +312,6 @@ class GtwApiService
 		}
 		
 		return $jsonResult;
-	}
-	
-	/**
-	 * Corrige les clés 'webinarKeys', mal décodées sur un système 32 bits
-	 * @param  array  $this->webinars  une liste de webinaires telle que retournée par l'API
-	 * @return void
-	 */
-	private function _fixWebinarsKeys()
-	{
-		if ($this->webinars) {
-			foreach($this->webinars as $k => $webinar) {
-				$segments = explode('/',$webinar->registrationUrl);
-				$this->webinars[$k]->webinarKey = array_pop($segments);
-			}
-		}
-	}
-	
-	/**
-	 * Corrige les clés 'webinarKeys', mal décodées sur un système 32 bits
-	 * @param  array  $this->webinars  une liste de webinaires telle que retournée par l'API
-	 * @return void
-	 */
-	private function _formatWebinarsTimes()
-	{
-		if ($this->webinars) {
-			foreach ($this->webinars as $k => $webinar) {
-				$timesTxt = array();
-				foreach($webinar->times as $timesItem) {
-					$timesTxt[] = $this->_timesToString($timesItem);
-				}
-
-				$this->webinars[$k]->timesTxt = implode('<br/>', $timesTxt);
-			}
-		}
-	}
-	
-	/**
-	 * Convertit ceci :
-	 * @praram object( startTime->"2016-09-30T09:25:00Z", endTime->"2016-09-30T10:30:00Z")
-	 * en ceci :
-	 * @return string "30.09.2016 de 09:25 à 10:30"
-	 */
-	private function _timesToString($times)
-	{
-		$de = ' '.$this->translator->trans('plugin.gotowebinar.from').' ';
-		$a = ' '.$this->translator->trans('plugin.gotowebinar.to').' ';
-		
-		$startTs = strtotime($times->startTime);
-		$startDMY = date('d.m.Y', $startTs);
-		$startHi = date('H:i', $startTs);
-		
-		$endTs = strtotime($times->endTime);
-		$endDMY = date('d.m.Y', $endTs);
-		$endHi = date('H:i', $endTs);
-		
-		if ($startDMY == $endDMY) {
-			$timesTxt = $startDMY . $de . $startHi . $a . $endHi;
-		}
-		else {
-			$timesTxt = $de . $startDMY . ' ' . $startHi . $a . $endDMY . ' ' . $endHi;
-		}
-		
-		return $timesTxt;
 	}
 	
 	/**
