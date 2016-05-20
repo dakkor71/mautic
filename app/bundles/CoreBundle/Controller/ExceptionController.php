@@ -77,15 +77,29 @@ class ExceptionController extends CommonController
             $currentUser = $this->factory->getUser();
             $completUrl = $_SERVER['HTTP_HOST'].$url;
             
-           // envoi du mail automatique au support
-           if($env === 'prod') {
-           	$this->sendMailSupportAutomatique($currentUser, $completUrl, $exception);
-           }
-         
-          	// construction du mail
-           $subject =  $this->buildSubjectMail($code, $completUrl,  false);
-           $body = $this->buildBodyMailFromException($currentUser, $completUrl, $exception, false);
-           $mailSupport = "support@webmecanik.com?subject=".$subject."&body=".$body;
+            // envoi du mail automatique au support
+            $uri = $request->getUri();
+            $ignoredKeywords = array(
+                'apple-touch-icon',
+                'dnt-policy'
+            );
+            
+            $ignored = false;
+            foreach ($ignoredKeywords as $keyword) {
+                if (strpos($uri, $keyword) !== false) {
+                    $ignored = true;
+                    break;
+                }
+            }
+                        
+            if ($env === 'prod' && !$ignored) {
+                $this->sendMailSupportAutomatique($currentUser, $completUrl, $exception);
+            }
+                
+            // construction du mail
+            $subject = $this->buildSubjectMail($code, $completUrl, false);
+            $body = $this->buildBodyMailFromException($currentUser, $completUrl, $exception, false);
+            $mailSupport = "support@webmecanik.com?subject=" . $subject . "&body=" . $body;
            
             /***/
             
