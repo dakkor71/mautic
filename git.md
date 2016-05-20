@@ -33,11 +33,11 @@ La mise à jour de la branche `master` de `automation_dev` se fera à partir de 
 
 Process de partage de commits de `automation_dev` vers `mautic_mautic`.
 
-1. Se mettre à jour : **Team -> pull**
+1. Dans le projet `automation_dev`, se mettre à jour : **Team -> fetch from upstream**
 2. Créer une branche depuis la staging de `mautic_wmk_public` : **Team -> branch -> new branch -> select source** et sélectionner **mautic_wmk_public/staging**
-3. Si le branche contient des commits "privés", pour chaque commit faites un cherry pick ( respecter l'ordre historique autant que possible même si pas obligatoire ). Pour ce faire rendez vous dans la vue historique de Eclipse, sélectionner votre commit avec un clic droit puis cherry-pick ( note : il peut y avoir un conflit ).
+3. Attention à ne pas partager la branche, car vous partagez tous les commits sur cette branche. Maintenant, pour chaque commit que vous souhaitez partager, faites un cherry pick ( respecter l'ordre historique autant que possible même si pas obligatoire ). Pour ce faire rendez vous dans la vue historique de Eclipse, sélectionner votre commit avec un clic droit puis cherry-pick ( note : il peut y avoir un conflit ).
 
-Enfin, il faut se rendre sur l'interface de github du projet mautic public sélectionner sa branche et faire un new pull request.
+Enfin, il faut se rendre sur l'interface de github du projet `mautic_wmk_public` sélectionner la branche créée au point 2 et faire un new pull request sur la branche staging de `mautic_mautic`
 
 ---
 
@@ -45,7 +45,7 @@ Enfin, il faut se rendre sur l'interface de github du projet mautic public séle
 	
 Comment tester une version de staging de mautic sans impacter le reste ?
 
-* On se met à jour : **Team -> pull**
+* Dans le projet `automation_dev`, se mettre à jour : **Team -> fetch from upstream**
 * On crée une nouvelle branche à partir de la branche staging du repository `mautic_mautic` : **Team -> branch -> new branch -> select source**
 * La nouvelle branche est notre branche de test.
 
