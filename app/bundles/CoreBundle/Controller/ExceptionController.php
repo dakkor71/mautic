@@ -149,11 +149,10 @@ class ExceptionController extends CommonController
      */
     protected function buildSubjectMail($code, $url, $auto) {
     	if($auto)
-            $subject = "Automatique - ";
-        else 
-            $subject = "";
-    		
-        return $subject."Erreur code ".$code." -  ".$url;
+    		$subject  = "Erreur code ".$code." -  ".$url;
+    	else 
+    		$subject  = "Demande de support - Code : ".$code;
+    	return $subject ;
     }
     
     protected function buildBodyMailFromException ($user, $url, $exception, $auto) {
@@ -198,8 +197,6 @@ class ExceptionController extends CommonController
     }
     
     protected function sendMailSupportAutomatique ($user, $url, $exception) {
-    	$emailDefault = $this->factory->getParameter('mailer_from_email');
-    	
     	$code = $this->extractCode($exception);
     	$errorMessage = $exception->getMessage();
     	$stack = $exception->getTrace();
@@ -212,7 +209,7 @@ class ExceptionController extends CommonController
     	
     	$message = \Swift_Message::newInstance()
     		->setSubject($subjectAuto)
-    		->setFrom($emailDefault)
+    		->setFrom(array($user->getEmail() => $user->getName()))
     		->setTo("support@webmecanik.com")
     		->setCharset('utf-8')
     		->setContentType("text/html")
