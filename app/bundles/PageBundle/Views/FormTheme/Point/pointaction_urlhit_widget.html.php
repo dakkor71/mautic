@@ -32,7 +32,7 @@ $timeFrames = array(
 </div>
 
 <div class="row">
-    <div class="col-xs-12 form-group ">
+    <div class="col-xs-12 form-group " style="display:none;">
         <?php echo $view['form']->label($form['returns_within']); ?>
         <div class="input-group">
             <?php echo $view['form']->widget($form['returns_within']); ?>
@@ -52,7 +52,7 @@ $timeFrames = array(
         <?php echo $view['form']->widget($form['returns_within_unit']); ?>
     </div>
 
-    <div class="col-xs-12 form-group ">
+    <div class="col-xs-12 form-group " style="display:none;">
         <?php echo $view['form']->label($form['returns_after']); ?>
         <div class="input-group">
             <?php echo $view['form']->widget($form['returns_after']); ?>
