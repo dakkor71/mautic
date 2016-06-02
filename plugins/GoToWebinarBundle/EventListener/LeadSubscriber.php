@@ -33,7 +33,7 @@ class LeadSubscriber extends CommonSubscriber
         return array(
             LeadEvents::TIMELINE_ON_GENERATE => array('onTimelineGenerate', 0),
             LeadEvents::LIST_FILTERS_CHOICES_ON_GENERATE => array('onListChoicesGenerate', 0),
-            LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE => array('onListOperatorsGenerate', 0),
+            /*LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE => array('onListOperatorsGenerate', 0),*/
             LeadEvents::LIST_FILTERS_ON_FILTERING => array('onListFiltering', 0)
         );
     }
@@ -112,68 +112,62 @@ class LeadSubscriber extends CommonSubscriber
      */	
 	public function onListChoicesGenerate (LeadListFiltersChoicesEvent $event)
 	{
-		$choiceKey = 'webinar';
-		$choiceLabel = $event->getTranslator()->trans('plugin.gotowebinar.event.webinar');
-		
+		// Liste des webinaires connus de ATMT ?
 		$webinarModel = $event->getFactory()->getModel('plugin.GoToWebinar.Webinar');
-		$webinarSlugs = array_merge(
-			array('-'),
-			$webinarModel->getDistinctWebinarSlugs()
-		);
+		$webinarSlugs = $webinarModel->getDistinctWebinarSlugs();
 		$webinarSlugs = array_combine($webinarSlugs, $webinarSlugs);
 		
-		$event->addChoice($choiceKey, array(
-			'label' => $choiceLabel,
+		// Avec l'option vierge uniquement
+		$webinarSlugsWithoutAny = array_merge(
+			array(
+				'-' => '-',
+			),
+			$webinarSlugs
+		);
+		
+		// Ajout de l'option vierge ET l'option "n'importe lequel" (any)
+		$webinarSlugsWithAny = array_merge(
+			array(
+				'-' => '-',
+				'any' => $event->getTranslator()->trans('plugin.gotowebinar.event.webinar.any')
+			),
+			$webinarSlugs
+		);
+		
+		// Filtre : est inscrit à un webinaire
+		$event->addChoice('webinar-subscription', array(
+			'label' => $event->getTranslator()->trans('plugin.gotowebinar.event.webinar.subscription'),
 			'properties' => array(
 				'type' => 'select',
-				'list' => $webinarSlugs
+				'list' => $webinarSlugsWithAny
 			),
 			'operators'  => array(
-				'include' => array(
-					'registered',
-					'!registered',
-					'participated',
-					'!participated',
-					'registered but not participated'
-				)
+				'include' => array('in', '!in')
 			)
 		));
-	}
-	
-	/**
-	 * Ajout des opérateurs 'registered', 'participated', '!registered', '!participated', 'registered but not participated'
-	 *
-	 * @param LeadListFiltersOperatorsEvent $event
-     */	
-	public function onListOperatorsGenerate (LeadListFiltersOperatorsEvent $event)
-	{
-		$event->addOperator('registered', array(
-			'label' => $event->getTranslator()->trans('plugin.gotowebinar.operators.registered'),
-			'expr'  => 'registered',
-			'negate_expr' => '!registered'
+		
+		// Filtre : a participé à un webinaire
+		$event->addChoice('webinar-participation', array(
+			'label' => $event->getTranslator()->trans('plugin.gotowebinar.event.webinar.participation'),
+			'properties' => array(
+				'type' => 'select',
+				'list' => $webinarSlugsWithAny
+			),
+			'operators'  => array(
+				'include' => array('in', '!in')
+			)
 		));
 		
-		$event->addOperator('!registered', array(
-			'label' => $event->getTranslator()->trans('plugin.gotowebinar.operators.not_registered'),
-			'expr'  => 'notRegistered',
-			'negate_expr' => 'registered'
-		));
-		
-		$event->addOperator('participated', array(
-			'label' => $event->getTranslator()->trans('plugin.gotowebinar.operators.participated'),
-			'expr'  => 'participated',
-			'negate_expr' => '!participated'
-		));
-		
-		$event->addOperator('!participated', array(
-			'label' => $event->getTranslator()->trans('plugin.gotowebinar.operators.not_participated'),
-			'expr'  => 'notParticipated',
-			'negate_expr' => 'participated'
-		));
-		
-		$event->addOperator('registered but not participated', array(
-			'label' => $event->getTranslator()->trans('plugin.gotowebinar.operators.registered_but_not_participated'),
-			'expr'  => 'registeredButNotParticipated'
+		// Filtre : est inscrit mais n'a pas participé à un webinaire
+		$event->addChoice('webinar-no-participation', array(
+			'label' => $event->getTranslator()->trans('plugin.gotowebinar.event.webinar.no.participation'),
+			'properties' => array(
+				'type' => 'select',
+				'list' => $webinarSlugsWithoutAny
+			),
+			'operators'  => array(
+				'include' => array('in')
+			)
 		));
 	}
 	
@@ -190,34 +184,57 @@ class LeadSubscriber extends CommonSubscriber
 		$q = $event->getQueryBuilder();
 		$alias = $event->getAlias();
 		$func = $event->getFunc();
+		$currentFilter = $details['field'];
 		
-		if ($details['field'] == 'webinar') {
+		$webinarFilters = array('webinar-subscription', 'webinar-participation', 'webinar-no-participation');
+		
+		if (in_array($currentFilter, $webinarFilters)) {
 			
-			// Specific lead
+			// Table qui contient les inscriptions / participations aux webinaires
+			$webinarEventsTable = $em->getClassMetadata('GoToWebinarBundle:WebinarEvent')->getTableName();
+			
+			// Webinaires à rechercher (arrav)
+			$webinarSlugs = $details['filter'];
+			$webinarSlugsForQuery = array_map(function($slug){return "'".$slug."'";}, $webinarSlugs);
+			
+			// ou ANY (n'imoporte quel webinaire)
+			$isAnyWebinar = in_array('any', $webinarSlugs);
+			
+			// Restriction à un seul lead ? => récupération de son email, utile plus loin
 			if ( !empty($leadId)) {
 				$lead = $em->getRepository('MauticLeadBundle:Lead')->getEntity($leadId);
 				$leadEmail = $lead->getEmail();
 			}
 			
-			// Pour chaque type d'événement Webinar, construction d'une sous-requête pour filtrer les leads
-			$webinarEventsTable = $em->getClassMetadata('GoToWebinarBundle:WebinarEvent')->getTableName();
-			$webinarSlug = $details['filter'];
+			// Préparation de sous-sous-requêtes utilisées plus loin pour construire la sous-requête finale
 			$subQueriesSQL = array();
 			$eventTypes = array('registered', 'participated');
 			foreach($eventTypes as $k => $eventType) {
 
 				$query = $em->getConnection()->createQueryBuilder()
 							->select('null')
-							->from($webinarEventsTable, $alias.$k)
-							->where(
-								$q->expr()->andX(
-									$q->expr()->eq($alias.$k.'.event_type', "'" . $eventType . "'"),
-									$q->expr()->eq($alias.$k.'.webinar_slug', "'" . $webinarSlug . "'"),
-									$q->expr()->eq($alias.$k.'.email', 'l.email')
-								)
-							);
-							
-				// Specific lead
+							->from($webinarEventsTable, $alias.$k);
+				
+				// Recherche d'une liste de webinaires
+				if ( !$isAnyWebinar) {
+					$query->where(
+						$q->expr()->andX(
+							$q->expr()->eq($alias.$k.'.event_type', "'" . $eventType . "'"),
+							$q->expr()->in($alias.$k.'.webinar_slug', $webinarSlugsForQuery),
+							$q->expr()->eq($alias.$k.'.email', 'l.email')
+						)
+					);
+				// Recherche de n'importe quel webinaire
+				} else {
+					$query->where(
+						$q->expr()->andX(
+							$q->expr()->eq($alias.$k.'.event_type', "'" . $eventType . "'"),
+							$q->expr()->eq($alias.$k.'.email', 'l.email')
+						)
+					);
+				}
+
+				// Restriction à un seul lead, d'après son email
 				if ( !empty($leadId)) {
 					$query->andWhere(
 						$query->expr()->eq($alias.$k.'.email', $leadEmail)
@@ -227,26 +244,66 @@ class LeadSubscriber extends CommonSubscriber
 				$subQueriesSQL[$eventType] = $query->getSQL();
 			}
 			
-			// Utilisation des sous-requêtes obtenues précédemment pour construire la sous-requête finale
-			// en fonction de l'opérande sélectionnée
-			switch ($func) {
-				case 'registered':
+			// Si opérateur "INCLUDING"
+			if ($func == 'in') {
+				
+				if ($currentFilter == 'webinar-subscription') {
+					// Est inscrit à W1 ou W2 ou...
+					// C'est à dire : il existe au moins une inscription qui matche
 					$subQuery = 'EXISTS (' . $subQueriesSQL['registered'] . ')';
-				break;
-				case 'notRegistered':
-					$subQuery = 'NOT EXISTS (' . $subQueriesSQL['registered'] . ')';
-				break;
-				case 'participated':
+				}
+				else  if ($currentFilter == 'webinar-participation') {
 					$subQuery = 'EXISTS (' . $subQueriesSQL['participated'] . ')';
-				break;
-				case 'notParticipated':
+				}
+				else if ($currentFilter == 'webinar-no-participation') {
+					
+					// Nombre d'inscriptions qui matchent
+					$queryNbRegistered = $em->getConnection()->createQueryBuilder()
+							->select('count(*)')
+							->from($webinarEventsTable, $alias.'sub1')
+							->where(
+								$q->expr()->andX(
+									$q->expr()->eq($alias.'sub1.event_type', "'registered'"),
+									$q->expr()->in($alias.'sub1.webinar_slug', $webinarSlugsForQuery),
+									$q->expr()->eq($alias.'sub1.email', $alias.'.email')
+								)
+							)->getSQL();
+					
+					// Nombre de participations qui matchent
+					$queryNbParticipated = $em->getConnection()->createQueryBuilder()
+							->select('count(*)')
+							->from($webinarEventsTable, $alias.'sub2')
+							->where(
+								$q->expr()->andX(
+									$q->expr()->eq($alias.'sub2.event_type', "'participated'"),
+									$q->expr()->in($alias.'sub2.webinar_slug', $webinarSlugsForQuery),
+									$q->expr()->eq($alias.'sub2.email', $alias.'.email')
+								)
+							)->getSQL();
+					
+					// Le nombre de participations qui matchent est inférieur strict au nombre d'inscriptins qui matchent
+					$subQuery = "((".$queryNbRegistered.") > (".$queryNbParticipated.")) AND ".$alias.".email = l.email";
+					
+					// Restriction à un seul lead, d'après son email
+					if ( !empty($leadId)) {
+						$subQuery .= " AND ".$alias.".email='".$leadEmail."'";
+					}
+					
+					// Il doit exister au moins une entrée qui répond aux conditions précédentes
+					$subQuery = "EXISTS ( SELECT null FROM ".$webinarEventsTable." AS ".$alias." WHERE ( ".$subQuery."))";
+				}
+			}
+			// Si opérateur "EXCLUDING"
+			else if ($func == 'notIn') {
+				
+				if ($currentFilter == 'webinar-subscription') {
+					// N'est inscrit ni à W1, ni à W2, ...
+					// C'est à dire : la requête "est inscrit à W1 ou W2, ..." ne retourne aucun résultat
+					$subQuery = 'NOT EXISTS (' . $subQueriesSQL['registered'] . ')';
+				}
+				else if ($currentFilter == 'webinar-participation') {
 					$subQuery = 'NOT EXISTS (' . $subQueriesSQL['participated'] . ')';
-				break;
-				case 'registeredButNotParticipated':
-					$subQuery1 = 'EXISTS (' . $subQueriesSQL['registered'] . ')';
-					$subQuery2 = 'NOT EXISTS (' . $subQueriesSQL['participated'] . ')';
-					$subQuery = sprintf('( %s AND %s )', $subQuery1, $subQuery2);
-				break;
+				};
 			}
 			
 			$event->setSubQuery($subQuery);

@@ -47,9 +47,8 @@ Lorsqu'un lead remplit puis valide le formulaire, le plugin :
 - ajoute un événement de type "webinar subscription" dans la timeline du lead, avec le slug dans les détails de l'événement
 De son côté, GoToWebinar envoie un email de confirmation d'inscription.
 
-###Smart list et filtres
+###Synchronisation avec GTW
 
-####En pratique : la synchro
 La tâche principale d'une synchronisation est d'ajouter des écritures dans la timeline des leads qui ont participé à une session.
 La synchro vérifie également les écritures liées aux inscriptions, en ajoutant ou en supprimant les écritures nécessaires. 
 Ainsi :
@@ -61,8 +60,13 @@ Si ce paramètre est absent, tous les webinaires connus sont synchronisés.
 Astuce pour tester la synchro : ajouter ou supprimer manuellement des entrées dans la table "plugin_gotowebinar_events", puis s'assurer que la synchro rétablisse les bonnes valeurs.
 
  
-####En pratique : le filtrage
-Dans les smart-list, ajouter un filtre "webinar", puis sélectionner un critère et un webinar dans les listes proposées.
+###Filtres de listes 
+Dans les smart-list, 3 filtres sont disponibles : "webinaire : est inscrit à...", "webinaire : a participé à...", "webinaire : est inscrit mais n'a pas participé à..."
+Exemples :
+"est inscrit à [including] webi1, webi2" signifie : "est inscrit à au moins l'un des deux webinaire."
+"est inscrit à [excluding] webi1, webi2" signifie : "n'est inscrit à aucun des deux webinaire."
+"est inscrit à [including] ANY" signifie : "est inscrit à au moins un webinaire."
+"est inscrit à [excluding] ANY" signifie : "n'est inscrit à aucun webinaire."
 Remarque : 
 En environnement de dev, le filtrage des leads nécessite l'exécution d'une commande depuis la console :
 `php app/console mautic:leadlists:update --env=dev --force`
