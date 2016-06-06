@@ -5,7 +5,7 @@
  * @author      Webmecanik
  * @link        http://www.webmecanik.com/
  */
- 
+
 return array(
     'name'        => 'GoToWebinar',
     'description' => 'plugin.gotowebinar.description',
@@ -17,10 +17,6 @@ return array(
 			'plugin.gotowebinar.route.public.oauthredirect' => array(
 				'path' => '/gotowebinar/request-token',
 				'controller' => 'GoToWebinarBundle:Public:requestToken'
-			),
-			'plugin.gotowebinar.route.public.cronsync' => array(
-				'path' => '/gotowebinar/cron/sync',
-				'controller' => 'GoToWebinarBundle:Cron:sync'
 			)
 		),
 		'main' => array(
@@ -34,9 +30,9 @@ return array(
 			)
 		)
 	),
-	
+
 	'services' => array(
-		
+
 		'events' => array(
 			'plugin.gotowebinar.config.subscriber' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\ConfigSubscriber'
@@ -52,7 +48,7 @@ return array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\CampaignSubscriber'
 			)
 		),
-		
+
 		'forms' => array(
 			'plugin.gotowebinar.formtype.config' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\Form\Type\ConfigType',
@@ -72,7 +68,7 @@ return array(
 				'arguments' => array('translator', 'mautic.factory')
 			)
 		),
-		
+
 		'others' => array(
 			'mautic.helper.gotowebinar.formaction' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\Helper\FormActionHelper',
@@ -95,7 +91,7 @@ return array(
 			)
 		)
 	),
-	
+
 	'parameters' => array(
 		'gotowebinar_consumer_key' => '',
 		'gotowebinar_access_token' => '',

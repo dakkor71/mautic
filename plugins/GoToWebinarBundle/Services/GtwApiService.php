@@ -1,11 +1,11 @@
-<?php 
+<?php
 /**
  * @package     GoToWebinar
  * @copyright   2016 Webmecanik. All rights reserved.
  * @author      Webmecanik
  * @link        http://www.webmecanik.com/
  */
- 
+
 namespace MauticPlugin\GoToWebinarBundle\Services;
 
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -21,23 +21,23 @@ class GtwApiService
 	const API_INIT_OAUTH_BASE_URL = 'https://api.citrixonline.com/oauth/authorize';
 	const API_GET_TOKEN_BASE_URL = 'https://api.citrixonline.com/oauth/access_token';
 	const API_BASE_URL = 'https://api.citrixonline.com:443/G2W/rest';
-	
+
 	private $accessToken;
 	private $organizerKey;
 	private $translator;
 	private $webinars;
-	
+
 	/**
 	 * Injection des paramètres gotowebinar_access_token et gotowebinar_organizer_key
 	 * et du service de traduction
 	 */
-	public function __construct($accessToken, $organizerKey, $translator) 
+	public function __construct($accessToken, $organizerKey, $translator)
 	{
 		$this->accessToken = $accessToken;
 		$this->organizerKey = $organizerKey;
 		$this->translator = $translator;
 	}
-	
+
 	/**
 	 * Construit et retourne l'URL permettant d'obtenir un token
 	 *
@@ -52,7 +52,7 @@ class GtwApiService
 		));
 		return $baseUrl . '?' . $query;
 	}
-	
+
 	/**
 	 * Grâce au code à usage unique fourni par Citrix, obtention et stockage du token
 	 *
@@ -68,17 +68,17 @@ class GtwApiService
 			'code' => $code,
 			'client_id' => $consumerKey
 		));
-		
+
 		// Requête HTTP
 		$jsonResult = $this->_curl($baseUrl . '?' . $query);
-		
+
 		if (property_exists($jsonResult, 'Error')) {
 			$this->_throwError($jsonResult->Error, $jsonResult->ErrorCode);
 		}
-		
+
 		return $jsonResult;
 	}
-	
+
 	/**
 	 * Teste le bon fonctionnement de l'API et la validité du token
 	 *
@@ -94,7 +94,7 @@ class GtwApiService
 		}
 		return true;
 	}
-	
+
 	/**
      * Retourne la liste des webinaires : tous ou ceux à venir
      *
@@ -103,13 +103,13 @@ class GtwApiService
      * @return 	array(string|object)
 	 * @throws  BadRequestHttpException
      */
-	public function getWebinarList($onlyFutures, $onlySubjects = true) 
+	public function getWebinarList($onlyFutures, $onlySubjects = true)
 	{
 		$url = '/organizers/' . $this->organizerKey . '/';
-		
+
 		if ($onlyFutures) {
 			$url .= 'upcomingWebinars';
-		} 
+		}
 		else {
 			$currentYear = date('Y');
 			$fromTime = ($currentYear - 10) . '-01-01T00:00:00Z';
@@ -118,49 +118,49 @@ class GtwApiService
 		}
 
 		$this->webinars = $this->_callAPI($url);
-		
+
 		$webinarlist = array();
 		if (is_array($this->webinars)) {
-			
+
 			if ($onlySubjects) {
 				foreach ($this->webinars as $webinar) {
 					$webinarlist[$webinar->webinarKey] = $webinar->subject;
 				}
-			} 
+			}
 			else {
 				$webinarlist = $this->webinars;
 			}
 		}
-		
+
 		return $webinarlist;
 	}
-	
+
 	/**
 	 * Inscrit une personne à un webinaire
-	 * @return bool 
+	 * @return bool
 	 * @throws  BadRequestHttpException
 	 */
 	public function subscribeToWebinar($webinarKey, $email, $firstname, $lastname)
 	{
 		$response = $this->_callAPI(
 			'/organizers/' . $this->organizerKey . '/webinars/' . $webinarKey . '/registrants?resendConfirmation=true',
-			array(				
+			array(
 				'email' => $email,
 				'firstName' => $firstname,
 				'lastName' => $lastname
 			)
 		);
-		
+
 		$success = (is_object($response) && property_exists($response, 'status') && $response->status == 'APPROVED');
 		return $success;
 	}
-	
+
 	/**
 	 * Retourne la liste des INSCRITS à un webinaire
 	 *
 	 * @param  string	$webinarKey
 	 * @param  bool		$onlyEmails
-	 * @return array( jsonObject | string) 
+	 * @return array( jsonObject | string)
 	 * @throws  BadRequestHttpException
 	 */
 	public function getRegistrants($webinarKey, $onlyEmails=true)
@@ -181,13 +181,13 @@ class GtwApiService
 			return $response;
 		}
 	}
-	
+
 	/**
 	 * Retourne la liste des PARTICIPANTS, toutes sessions confondues, à un webinaire
 	 *
 	 * @param  string	$webinarKey
 	 * @param  bool		$onlyEmails
-	 * @return array( jsonObject | string) 
+	 * @return array( jsonObject | string)
 	 * @throws  BadRequestHttpException
 	 */
 	public function getAttendees($webinarKey, $onlyEmails=true)
@@ -208,28 +208,31 @@ class GtwApiService
 			return $response;
 		}
 	}
-	
+
 	/**
 	 * Retourne un identifiant unique mais compréhensible (incluant une partie du titre) d'un webinaire
 	 *
 	 * @param	string	$webinarKey
+	 * @param	string	$webinarTitle 	[Optionnel] S'il est connu, fournir le titre du Webinar, cela évite un appel API
 	 * @return 	string	De la forme : webinarSubject_#webinarKey
 	 * @throws  BadRequestHttpException
 	 */
-	public function getWebinarSlug ($webinarKey) 
+	public function getWebinarSlug ($webinarKey, $webinarTitle = false)
 	{
-		// Lecture du titre du webinaire
-		$response = $this->_callAPI(
-			'/organizers/' . $this->organizerKey . '/webinars/' . $webinarKey
-		);
-		$subject = $response->subject;
-		
+		if ( !$webinarTitle) {
+			// Lecture du titre du webinaire
+			$response = $this->_callAPI(
+				'/organizers/' . $this->organizerKey . '/webinars/' . $webinarKey
+			);
+			$webinarTitle = $response->subject;
+		}
+
 		// Nettoyage du titre pour créer un slug
-		$subjectSlug = $this->_getSlugFromString($subject);
-		
+		$subjectSlug = $this->_getSlugFromString($webinarTitle);
+
 		return $subjectSlug . '_#' . $webinarKey;
 	}
-	
+
 	/**
 	 * Requête GET ou POST à l'API
 	 *
@@ -250,26 +253,26 @@ class GtwApiService
 				"Authorization: OAuth oauth_token=".$this->accessToken
 			)
 		);
-		
+
 		// Erreur retournée par l'API ? (token invalide, ...)
 		if (is_object($jsonResult) && property_exists($jsonResult, 'int_err_code')) {
 			$this->_throwError($jsonResult->msg, $jsonResult->int_err_code);
 		}
-		
+
 		// Autre erreur retournée par l'API ? (quota dépassé, ...)
 		if (is_object($jsonResult) && property_exists($jsonResult, 'err')) {
 			$this->_throwError($jsonResult->message, $jsonResult->err);
 		}
-		
+
 		// Autre erreur retournée par l'API ? (quota dépassé, ...)
 		if (is_object($jsonResult) && property_exists($jsonResult, 'errorCode')) {
 			$this->_throwError($jsonResult->description, $jsonResult->errorCode);
 		}
-		
+
 		return $jsonResult;
 	}
-	
-	
+
+
 	/**
 	 * Requête HTTP avec CURL, auprès d'un service qui retourne du JSON
 	 *
@@ -286,36 +289,36 @@ class GtwApiService
 		curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5);
 		curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-		
+
 		if ( !empty($headers)) {
 			curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 		}
-		
+
 		if ( !empty($postDatas)) {
 			curl_setopt($curl, CURLOPT_POST, count($postDatas));
 			curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($postDatas));
 		}
-		
+
 		$rawResult = curl_exec($curl);
-		
+
 		// Echec de la requête CURL ?
 		if ($rawResult === false) {
 			$this->_throwError(curl_error($curl) . ' : ' . curl_errno($curl));
 		}
 		curl_close($curl);
-		
+
 		$jsonResult = json_decode($rawResult, false, 512, JSON_BIGINT_AS_STRING);
-		
+
 		// Echec du décodage JSON ?
 		if ($jsonResult === null) {
 			$this->_throwError('Failed to decode JSON response : ' . $rawResult);
 		}
-		
+
 		return $jsonResult;
 	}
-	
+
 	/**
-	 * Transforme "Une chaîne de caractères !" 
+	 * Transforme "Une chaîne de caractères !"
 	 *
 	 * @param string 	$str
 	 * @param int 		$limit	longueur maxi du slug
@@ -328,7 +331,7 @@ class GtwApiService
 		$str = preg_replace('#&([A-za-z])(?:acute|cedil|caron|circ|grave|orn|ring|slash|th|tilde|uml);#', '\1', $str);
 		$str = preg_replace('#&([A-za-z]{2})(?:lig);#', '\1', $str);
 		$str = preg_replace('#&[^;]+;#', '', $str);
-		
+
 		// Deuxième étape : restriction à un alphabet donné
 		$availableChars = explode(' ', "0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z");
 		$safeStr = '';
@@ -350,7 +353,7 @@ class GtwApiService
 
 		return trim(substr($safeStr, 0, $limit), '-');
 	}
-	
+
 	/**
 	 * @throw  BadRequestHttpException
 	 */
@@ -362,7 +365,7 @@ class GtwApiService
 			(( !empty($complement)) ? ' : '.$complement : '')
 		);
 	}
-	
+
 }
 
 ?>
