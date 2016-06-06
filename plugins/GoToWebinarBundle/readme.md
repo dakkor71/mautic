@@ -62,6 +62,7 @@ Astuce pour tester la synchro : ajouter ou supprimer manuellement des entrées d
 
 ###Filtres de listes
 Dans les smart-list, 3 filtres sont disponibles : "webinaire : est inscrit à...", "webinaire : a participé à...", "webinaire : est inscrit mais n'a pas participé à..."
+
 Exemples :
 "est inscrit à [including] webi1, webi2" signifie : "est inscrit à au moins l'un des deux webinaire."
 "est inscrit à [excluding] webi1, webi2" signifie : "n'est inscrit à aucun des deux webinaire."
