@@ -170,13 +170,6 @@ class GtwcastApiService
 			// Un inscrit
 			$item = $xml->result->success->attendee_list->attendee[$i];
 			$email = (string)$item['email'];
-
-			// S'est-il désinscrit ?
-			if ((string)$item['unsubscribe'] == 'true') {
-				continue;
-			}
-
-			// Ajout à la liste des inscrits
 			$registrants[] = $email;
 
 			// Ajout à la liste des participants s'il y a eu au moins une session
