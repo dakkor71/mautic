@@ -65,10 +65,15 @@ Dans les smart-list, 3 filtres sont disponibles : "webinaire : est inscrit à...
 
 Exemples :
 "est inscrit à [including] webi1, webi2" signifie : "est inscrit à au moins l'un des deux webinaire."
+
 "est inscrit à [excluding] webi1, webi2" signifie : "n'est inscrit à aucun des deux webinaire."
+
 "est inscrit à [including] ANY" signifie : "est inscrit à au moins un webinaire."
+
 "est inscrit à [excluding] ANY" signifie : "n'est inscrit à aucun webinaire."
+
 Remarque :
+
 En environnement de dev, le filtrage des leads nécessite l'exécution d'une commande depuis la console :
 `php app/console mautic:leadlists:update --env=dev --force`
 
