@@ -61,11 +61,17 @@ Astuce pour tester la synchro : ajouter ou supprimer manuellement des entrées d
 
 ###Filtres de listes
 Dans les smart-list, 3 filtres sont disponibles : "webcast : est inscrit à...", "webcast : a participé à...", "webcast : est inscrit mais n'a pas participé à..."
+
 Exemples :
+
 "est inscrit à [including] webc1, webc2" signifie : "est inscrit à au moins l'un des deux webcast."
+
 "est inscrit à [excluding] webc1, webc2" signifie : "n'est inscrit à aucun des deux webcast."
+
 "est inscrit à [including] ANY" signifie : "est inscrit à au moins un webcast."
+
 "est inscrit à [excluding] ANY" signifie : "n'est inscrit à aucun webcast."
+
 Remarque :
 En environnement de dev, le filtrage des leads nécessite l'exécution d'une commande depuis la console :
 `php app/console mautic:leadlists:update --env=dev --force`
