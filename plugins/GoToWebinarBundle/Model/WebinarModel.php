@@ -207,4 +207,28 @@ class WebinarModel extends CommonModel
 			$application->run(new \Symfony\Component\Console\Input\ArrayInput($options));
 		}
 	}
+
+	/**
+	 * Déclenge si nécessaire les décisions de campagne de type 'gotowebinar' pour le lead correspondant à un email
+	 *
+	 * @param	$email	string
+	 * @return	void
+	 */
+	private function _triggerCampaignsDecisions($email)
+	{
+		$leadModel = $this->factory->getModel('lead');
+
+		// Recherche du lead
+		$result = $leadModel->getRepository()->getLeadByEmail($email);
+		if (isset($result['id'])) {
+
+			// S'il existe, on le définit comme lead courant...
+			$leadId = (int)$result['id'];
+			$lead = $leadModel->getEntity($leadId);
+			$leadModel->setCurrentLead($lead);
+
+			// ... nécessaire pour tester le déclenchement des triggers custom
+			$this->factory->getModel('campaign')->triggerEvent('gotowebinar.decision');
+		}
+	}
 }

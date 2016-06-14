@@ -47,7 +47,7 @@ class CampaignEventGotowebinarType extends AbstractType
 		));
 
 		// Liste des webinaires disponibles
-		$webinarSlugs = $this->webinarModel->getDistinctWebcastSlugs();
+		$webinarSlugs = $this->webinarModel->getDistinctWebinarSlugs();
 		$choices = array_merge(
 			array('ANY' => $this->translator->trans('plugin.gotowebinar.event.webinar.any')),
 			array_combine($webinarSlugs, $webinarSlugs)
