@@ -36,7 +36,7 @@ class CampaignSubscriber extends CommonSubscriber
     public function onCampaignBuild(CampaignBuilderEvent $event)
     {
         $event->addLeadDecision(
-			'gotowebcast.decision', 
+			'gotowebcast.decision',
 			array(
 				'label'       => 'Webcast',
 				'formType'    => 'gotowebcast_formtype_campaignevent',
@@ -44,5 +44,5 @@ class CampaignSubscriber extends CommonSubscriber
 			)
 		);
     }
-	
+
 }

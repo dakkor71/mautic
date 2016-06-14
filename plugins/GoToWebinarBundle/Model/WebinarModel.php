@@ -5,7 +5,7 @@
  * @author      Webmecanik
  * @link        http://www.webmecanik.com/
  */
- 
+
 namespace MauticPlugin\GoToWebinarBundle\Model;
 
 use Mautic\CoreBundle\Model\CommonModel;
@@ -19,19 +19,19 @@ use MauticPlugin\GoToWebinarBundle\Entity\WebinarEvent;
 class WebinarModel extends CommonModel
 {
 	private $webinarEventRepo;
-	
-	/** 
+
+	/**
 	 * Lorsque le MauticFactory instancie pour la première fois ce modèle,
-	 * la table liée à l'entité 'WebinarEvent' est créée 
+	 * la table liée à l'entité 'WebinarEvent' est créée
 	 */
 	public function __construct(MauticFactory $factory)
 	{
 		parent::__construct($factory);
 		$this->_createTableIfNotExists();
-		
+
 		$this->webinarEventRepo = $this->em->getRepository('GoToWebinarBundle:WebinarEvent');
 	}
-	
+
 	/**
 	 * Enregistre un événement lié à un webinaire
 	 *
@@ -40,24 +40,25 @@ class WebinarModel extends CommonModel
 	 * @param string $eventType	 "registered" | "participated"
 	 * @param \Datetime	$eventDatetime (option)
 	 */
-	public function addEvent($email, $webinarSlug, $eventType, $eventDatetime = false) 
+	public function addEvent($email, $webinarSlug, $eventType, $eventDatetime = false)
 	{
 		$webinarEvent = new WebinarEvent;
 		$webinarEvent->setEmail($email);
 		$webinarEvent->setWebinarSlug($webinarSlug);
 		$webinarEvent->setEventType($eventType);
-		
+
 		// Par défaut, l'événement est défini à l'heure courante
 		if ($eventDatetime !== false) {
 			$webinarEvent->setEventDatetime($eventDatetime);
 		}
-		
+
 		// Enregistrement en DB
 		$this->em->persist($webinarEvent);
 		$this->em->flush();
-		
+
+		$this->_triggerCampaignsDecisions($email);
 	}
-	
+
 	/*
 	 * Retourne les événements liés aux webinaires pour le lead donné
 	 *
@@ -70,7 +71,7 @@ class WebinarModel extends CommonModel
 		$webinarEvents = $this->webinarEventRepo->findByEmail($email);
 		return $webinarEvents;
 	}
-	
+
 	/*
 	 * Retourne les emails des inscrits ou des participants à un webinaire
 	 *
@@ -84,7 +85,7 @@ class WebinarModel extends CommonModel
 			'webinarSlug' => $webinarSlug,
 			'eventType' => $eventType
 		));
-		
+
 		if ( !empty($webinarEvents)) {
 			$emails = array_map(function ($webinarEvent) {
 				return $webinarEvent->getEmail();
@@ -93,17 +94,17 @@ class WebinarModel extends CommonModel
 		else {
 			$emails = array();
 		}
-		
+
 		return $emails;
 	}
-	
+
 	/*
 	 * Retourne la liste des webinaires présents dans au moins une timeline
 	 *
 	 * @return 	array( string )		Liste des webinarSlug
 	 */
 	public function getDistinctWebinarSlugs()
-	{		
+	{
 		$query = $this->em->createQuery('SELECT DISTINCT(we.webinarSlug) FROM GoToWebinarBundle:WebinarEvent we');
 		$items = $query->getResult();
 		return array_map(
@@ -111,7 +112,29 @@ class WebinarModel extends CommonModel
 			$items
 		);
 	}
-	
+
+	/**
+	 * Dénombre les événements GTW qui correspondent aux paramètres
+	 */
+	public function countEventsBy($email, $eventType, $webinarsSlugs)
+	{
+		$sqlQuery = sprintf(
+			"SELECT COUNT(we.id) as counter FROM GoToWebinarBundle:WebinarEvent we WHERE we.email='%s' AND we.eventType='%s' ",
+			$email,
+			$eventType
+		);
+
+		if (is_array($webinarsSlugs) && count($webinarsSlugs) > 0) {
+			$sqlQuery .= sprintf(
+				'AND we.webcastSlug IN(%s)',
+				implode(',', array_map(function($slug){return "'".$slug."'";}, $webinarsSlugs))
+			);
+		}
+
+		$query = $this->em->createQuery($sqlQuery);
+		return (int)$query->getResult()[0]['counter'];
+	}
+
 	/**
 	 * Mise à jour (ajout et/ou suppression) d'un lot d'emails pour un webinaire donné et un type d'événement donné
 	 *
@@ -133,31 +156,37 @@ class WebinarModel extends CommonModel
 				$this->em->persist($webinarEvent);
 			}
 		}
-		
+
 		// Suppression
 		if ( !empty($emailsToRemove)) {
-			
+
 			$webinarEvents = $this->webinarEventRepo->findBy(array(
 				'webinarSlug' => $webinarSlug,
 				'eventType' => $eventType,
 				'email' => $emailsToRemove
 			));
-			
+
 			foreach($webinarEvents as $webinarEvent) {
 				$this->em->remove($webinarEvent);
 			}
 		}
-		
+
 		// Flush si nécessaire
 		if ( !empty($emailsToAdd) || !empty($emailsToRemove)) {
 			$this->em->flush();
+		}
+
+		if ( !empty($emailsToAdd)) {
+			foreach($emailsToAdd as $email) {
+				$this->_triggerCampaignsDecisions($email);
+			}
 		}
 	}
 
 	/**
 	 * Vérifie l'existence de la table qui contient les événements liés à GoToWebinar
 	 * et la crée si besoin.
-	 * 
+	 *
      * @param void
 	 * @return void
      */
@@ -165,11 +194,11 @@ class WebinarModel extends CommonModel
 	{
 		// Récupération du nom de la table associée à l'entité
 		$tableName = $this->em->getClassMetadata('GoToWebinarBundle:WebinarEvent')->getTableName();
-		
+
 		// Vérification de son existence en DB
 		$schemaManager = $this->em->getConnection()->getSchemaManager();
 		if ( !$schemaManager->tablesExist(array($tableName)) == true) {
-			
+
 			// Si elle n'existe pas, déclenche une mise à jour du schéma Doctrine via la console
 			$kernel = $this->factory->getKernel();
 			$application = new \Symfony\Bundle\FrameworkBundle\Console\Application($kernel);

@@ -5,7 +5,7 @@
  * @author      Webmecanik
  * @link        http://www.webmecanik.com/
  */
- 
+
 namespace MauticPlugin\GoToWebcastBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
@@ -19,39 +19,44 @@ use Mautic\CoreBundle\Factory\MauticFactory;
 class CampaignEventGotowebcastType extends AbstractType
 {
 	protected $translator;
-	
+
 	/**
-	 * Injection de dépendances 
+	 * Injection de dépendances
 	 */
-	public function __construct(TranslatorInterface $translator, MauticFactory $factory) 
+	public function __construct(TranslatorInterface $translator, MauticFactory $factory)
 	{
 		$this->translator = $translator;
 		$this->webcastModel = $factory->getModel('plugin.GoToWebcast.Webcast');
 	}
-	
+
     /**
      * {@inheritdoc}
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
 		// Liste des opérandes
-		$builder->add('webcast-operand', 'choice', array(
-			'label' => $this->translator->trans('plugin.gotowebcast.event.webcast.operand'),
+		$builder->add('webcast-criteria', 'choice', array(
+			'label' => $this->translator->trans('plugin.gotowebcast.decision.criteria'),
 			'choices'  => array(
-				'registered' => $this->translator->trans('plugin.gotowebcast.operators.registered'),
-				'notRegistered' => $this->translator->trans('plugin.gotowebcast.operators.not_registered'),
-				'participated' => $this->translator->trans('plugin.gotowebcast.operators.participated'),
-				'notParticipated' => $this->translator->trans('plugin.gotowebcast.operators.not_participated'),
-				'registeredButNotParticipated' => $this->translator->trans('plugin.gotowebcast.operators.registered_but_not_participated')
+				'registeredInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.registered'),
+				'notRegisteredInAny' => $this->translator->trans('plugin.gotowebcast.criteria.not_registered'),
+				'participatedInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.participated'),
+				'notParticipatedInAny' => $this->translator->trans('plugin.gotowebcast.criteria.not_participated'),
+				'registeredButNotParticipatedInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.registered_but_not_participated')
 			)
 		));
-		
+
 		// Liste des webcasts disponibles
 		$webcastSlugs = $this->webcastModel->getDistinctWebcastSlugs();
-		
-		$builder->add('webcast', 'choice', array(
-			'label' => $this->translator->trans('plugin.gotowebcast.event.webcast'),
-			'choices' => array_combine($webcastSlugs, $webcastSlugs) 
+		$choices = array_merge(
+			array('ANY' => $this->translator->trans('plugin.gotowebcast.event.webcast.any')),
+			array_combine($webcastSlugs, $webcastSlugs)
+		);
+
+		$builder->add('webcasts', 'choice', array(
+			'label' => $this->translator->trans('plugin.gotowebcast.decision.webcasts.list'),
+			'choices' => $choices,
+            'multiple' => true
 		));
     }
 
