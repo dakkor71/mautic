@@ -78,4 +78,9 @@ En environnement de dev, le filtrage des leads nécessite l'exécution d'une com
 `php app/console mautic:leadlists:update --env=dev --force`
 
 ###Décisions de formulaires
-Le bloc existe mais ne fonctionne pas encore.
+
+Depuis le campaign Builder, possibilité d'ajouter une décision "GoToWebinar", avec les mêmes options que les filtres de liste.
+
+Attention : les décisions se déclenchent lors de la synchro avec l'API, pour chaque nouvelle écriture dans une timeline. Il faut donc que les leads soient déjà dans la campagne AVANT que l'événement "inscription" ou "participation" n'ait lieu.
+
+Le flux d'entrée de la campagne peut être, par exemple, la soumission d'un formulaire contenant un champ d'inscription à un webinaire. Et, sur le point rouge de la décision, brancher une action planifiée à une date ultérieure au webinaire en question.
