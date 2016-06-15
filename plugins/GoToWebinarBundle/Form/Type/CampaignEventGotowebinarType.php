@@ -39,10 +39,7 @@ class CampaignEventGotowebinarType extends AbstractType
 			'label' => $this->translator->trans('plugin.gotowebinar.decision.criteria'),
 			'choices'  => array(
 				'registeredInAtLeast' => $this->translator->trans('plugin.gotowebinar.criteria.registered'),
-				'notRegisteredInAny' => $this->translator->trans('plugin.gotowebinar.criteria.not_registered'),
-				'participatedInAtLeast' => $this->translator->trans('plugin.gotowebinar.criteria.participated'),
-				'notParticipatedInAny' => $this->translator->trans('plugin.gotowebinar.criteria.not_participated'),
-				'registeredButNotParticipatedInAtLeast' => $this->translator->trans('plugin.gotowebinar.criteria.registered_but_not_participated')
+				'participatedInAtLeast' => $this->translator->trans('plugin.gotowebinar.criteria.participated')
 			)
 		));
 

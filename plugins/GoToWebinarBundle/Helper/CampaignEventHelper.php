@@ -31,34 +31,24 @@ class CampaignEventHelper
 	 */
 	public static function onWebcastDecisionTriggered(array $config, Lead $lead, MauticFactory $factory)
 	{
+		$webinarModel = $factory->getModel('plugin.GoToWebcast.Webcast');
+
 		$criteria = $config['webinar-criteria'];
 		$webinarsList = $config['webinars'];
 		$isAny = in_array('ANY', $webinarsList);
 		$email = $lead->getEmail();
 
-		$webinarModel = $factory->getModel('plugin.GoToWebcast.Webcast');
+		if ($criteria == 'registeredInAtLeast') {
+			$counter = $webinarModel->countEventsBy($email, 'registered', $isAny ? false : $webinarsList);
+		}
+		else if ($criteria == 'participatedInAtLeast') {
+			$counter = $webinarModel->countEventsBy($email, 'participated', $isAny ? false : $webinarsList);
+		}
+		else {
+			return false;
+		}
 
-		if ( !in_array($criteria, array('participatedInAtLeast', 'notParticipatedInAny'))) {
-			$registeredCounter = $webinarModel->countEventsBy($email, 'registered', $isAny ? false : $webinarsList);
-		}
-		if ( !in_array($criteria, array('registeredInAtLeast', 'notRegisteredInAny'))) {
-			$participatedCounter = $webinarModel->countEventsBy($email, 'participated', $isAny ? false : $webinarsList);
-		}
-
-		switch($criteria) {
-			case 'registeredInAtLeast':
-				return ($registeredCounter > 0);
-			case 'notRegisteredInAny':
-				return ($registeredCounter == 0);
-			case 'participatedInAtLeast':
-				return ($participatedCounter > 0);
-			case 'notParticipatedInAny':
-				return ($participatedCounter == 0);
-			case 'registeredButNotParticipatedInAtLeast':
-				return ($participatedCounter < $registeredCounter);
-			default:
-				return false;
-		}
+		return ($counter > 0);
 	}
 
 }

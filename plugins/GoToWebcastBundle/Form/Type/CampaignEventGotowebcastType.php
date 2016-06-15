@@ -39,10 +39,7 @@ class CampaignEventGotowebcastType extends AbstractType
 			'label' => $this->translator->trans('plugin.gotowebcast.decision.criteria'),
 			'choices'  => array(
 				'registeredInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.registered'),
-				'notRegisteredInAny' => $this->translator->trans('plugin.gotowebcast.criteria.not_registered'),
-				'participatedInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.participated'),
-				'notParticipatedInAny' => $this->translator->trans('plugin.gotowebcast.criteria.not_participated'),
-				'registeredButNotParticipatedInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.registered_but_not_participated')
+				'participatedInAtLeast' => $this->translator->trans('plugin.gotowebcast.criteria.participated')
 			)
 		));
 
