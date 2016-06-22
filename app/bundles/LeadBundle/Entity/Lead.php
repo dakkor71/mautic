@@ -742,7 +742,24 @@ class Lead extends FormEntity
      */
     public function addDoNotContactEntry(DoNotContact $doNotContact)
     {
-        $this->changes['dnc_status'] = array($doNotContact->getChannel(), $doNotContact->getComments());
+        $this->changes['dnc_channel_status'][$doNotContact->getChannel()] = array(
+            'reason'   => $doNotContact->getReason(),
+            'comments' => $doNotContact->getComments()
+        );
+
+        switch ($doNotContact->getReason()) {
+            case DoNotContact::BOUNCED:
+                $type = 'bounced';
+                break;
+            case DoNotContact::MANUAL:
+                $type = 'manual';
+                break;
+            case DoNotContact::UNSUBSCRIBED:
+            default:
+                $type = 'unsubscribed';
+                break;
+        }
+        $this->changes['dnc_status'] = array($type, $doNotContact->getComments());
 
         $this->doNotContact[] = $doNotContact;
 
