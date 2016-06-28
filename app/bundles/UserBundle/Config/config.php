@@ -30,7 +30,8 @@ return array(
                 'controller' => 'MauticUserBundle:Security:login',
             ),
             'mautic_user_logincheck'    => array(
-                'path' => '/login_check'
+                'path' => '/login_check',
+                'controller' => 'MauticUserBundle:Security:loginCheck'
             ),
             'mautic_user_logout'        => array(
                 'path' => '/logout'
@@ -60,7 +61,7 @@ return array(
             'mautic_api_getusers'        => array(
                 'path'       => '/users',
                 'controller' => 'MauticUserBundle:Api\UserApi:getEntities',
-            ),        		
+            ),
             'mautic_api_getuser'         => array(
                 'path'         => '/users/{id}',
                 'controller'   => 'MauticUserBundle:Api\UserApi:getEntity'
