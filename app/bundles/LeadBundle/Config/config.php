@@ -315,6 +315,11 @@ return array(
                 'path'       => '/leads/{id}',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:getEntity'
             ),
+            //Nouvelle route pour l'historique
+            'mautic_api_getleadhistory_bc'           => array(
+                'path'       => '/leads/{id}/history',
+                'controller' => 'MauticLeadBundle:Api\LeadApi:getEntityHistory'
+            ),
             'mautic_api_editputlead_bc'       => array(
                 'path'       => '/leads/{id}/edit',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:editEntity',
