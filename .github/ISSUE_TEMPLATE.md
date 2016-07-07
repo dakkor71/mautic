@@ -5,8 +5,8 @@
 - ~~Agence 2~~
 
 #### Quels comptes Automations ont rencontré ce bug :
-- ~~sousdomaine1~~
-- ~~sousdomaine2~~
+- `sousdomaine1`
+- `sousdomaine2`
 
 ## Description
 
