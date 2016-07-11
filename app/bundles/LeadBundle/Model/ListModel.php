@@ -16,6 +16,7 @@ use Mautic\LeadBundle\Entity\ListLead;
 use Mautic\LeadBundle\Event\FilterChoiceEvent;
 use Mautic\LeadBundle\Event\LeadListEvent;
 use Mautic\LeadBundle\Event\ListChangeEvent;
+use Mautic\LeadBundle\Event\LeadListFiltersChoicesEvent;
 use Mautic\LeadBundle\LeadEvents;
 use Mautic\CoreBundle\Helper\Chart\LineChart;
 use Mautic\CoreBundle\Helper\Chart\PieChart;
@@ -49,6 +50,8 @@ class ListModel extends FormModel
         /** @var \Mautic\LeadBundle\Entity\LeadListRepository $repo */
         $repo = $this->em->getRepository('MauticLeadBundle:LeadList');
 
+		$repo->setFactory($this->factory);
+		
         $repo->setTranslator($this->translator);
 
         return $repo;
@@ -204,7 +207,9 @@ class ListModel extends FormModel
      */
     public function getFilterExpressionFunctions()
     {
-        return $this->em->getRepository('MauticLeadBundle:LeadList')->getFilterExpressionFunctions();
+		$repo = $this->em->getRepository('MauticLeadBundle:LeadList');
+		$repo->setFactory($this->factory);
+		return $repo->getFilterExpressionFunctions();
     }
 
     /**
@@ -369,6 +374,13 @@ class ListModel extends FormModel
             )
         );
 
+		// Add custom choices
+		if ($this->dispatcher->hasListeners(LeadEvents::LIST_FILTERS_CHOICES_ON_GENERATE)) {
+			$event = new LeadListFiltersChoicesEvent($choices, $operators, $this->translator, $this->factory);
+			$this->dispatcher->dispatch(LeadEvents::LIST_FILTERS_CHOICES_ON_GENERATE, $event);
+			$choices = $event->getChoices();
+		}
+		
         //get list of custom fields
         $fields = $this->factory->getModel('lead.field')->getEntities(
             array(

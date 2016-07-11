@@ -21,13 +21,16 @@ use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\CoreBundle\Helper\InputHelper;
 use Mautic\LeadBundle\Entity\DoNotContact;
-
+use Mautic\CoreBundle\Factory\MauticFactory;
+use Mautic\LeadBundle\LeadEvents;
+use Mautic\LeadBundle\Event\LeadListFiltersOperatorsEvent;
+use Mautic\LeadBundle\Event\LeadListFilteringEvent;
 /**
  * LeadListRepository
  */
 class LeadListRepository extends CommonRepository
 {
-
+	
     /**
      * {@inheritdoc}
      *
@@ -714,6 +717,22 @@ class LeadListRepository extends CommonRepository
             // Generate a unique alias
             $alias = $this->generateRandomParameterName();
 
+			// Apply custom filter and operator
+			$dispatcher = $this->factory->getDispatcher();
+			$isFilteringDone = false;
+			if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_ON_FILTERING)) {
+				
+				$event = new LeadListFilteringEvent($details, $leadId, $alias, $func, $q, $this->_em);
+				$dispatcher->dispatch(LeadEvents::LIST_FILTERS_ON_FILTERING, $event);
+				
+				// If filtering matched, insert sub-query
+				$isFilteringDone = $event->isFilteringDone();
+				if ($isFilteringDone) {
+					$groupExpr->add($event->getSubQuery());
+				}
+			}
+			
+			if ( !$isFilteringDone) {
             switch ($details['field']) {
                 case 'hit_url':
                     $operand = (($func == 'eq') || ($func == 'like')) ? 'EXISTS' : 'NOT EXISTS';
@@ -804,6 +823,15 @@ class LeadListRepository extends CommonRepository
                     // Special handling of lead lists and tags
                     $func = in_array($func, array('eq', 'in')) ? 'EXISTS' : 'NOT EXISTS';
 
+						if ($details['field'] == 'leadlist') {
+							$table  = 'lead_lists_leads';
+							$column = 'leadlist_id';
+						} else {
+							$table  = 'lead_tags_xref';
+							$column = 'tag_id';
+						}
+
+						// DBAL requires an array for in()
                     $ignoreAutoFilter = true;
                     foreach ($details['filter'] as &$value) {
                         $value = (int) $value;
@@ -939,6 +967,8 @@ class LeadListRepository extends CommonRepository
                             $groupExpr->add($q->expr()->$func($field, $exprParameter));
                             break;
                     }
+					break;
+				}
             }
 
             if (!$ignoreAutoFilter) {
@@ -1075,7 +1105,15 @@ class LeadListRepository extends CommonRepository
                     'negate_expr' => 'in'
                 ),
         );
-
+		
+		// Add custom filters operators
+		$dispatcher = $this->factory->getDispatcher();
+		if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE)) {
+			$event = new LeadListFiltersOperatorsEvent($operatorOptions, $this->factory->getTranslator());
+			$dispatcher->dispatch(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE, $event);
+			$operatorOptions = $event->getOperators();
+		}
+		
         return ($operator === null) ? $operatorOptions : $operatorOptions[$operator];
     }
 
