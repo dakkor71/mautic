@@ -38,3 +38,4 @@
 !/media/images/.htaccess
 /media/dashboards/*
 !/media/dashboards/*.json
+!/media/images/automation*

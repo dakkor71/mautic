@@ -756,6 +756,7 @@ class Lead extends FormEntity
                 $type = 'manual';
                 break;
             case DoNotContact::UNSUBSCRIBED:
+            default:
                 $type = 'unsubscribed';
                 break;
         }

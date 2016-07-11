@@ -150,6 +150,27 @@ class LeadModel extends FormModel
     }
 
     /**
+     * Get a specific entity history
+     *
+     * @param $id
+     *
+     * @return null|object
+     */
+    public function getEntityHistory($id = null)
+    {
+        if (null !== $id) {
+            $repo = $this->getRepository();
+            if (method_exists($repo, 'getEntityHistory')) {
+                return $repo->getEntityHistory($id);
+            }
+
+            return $repo->find($id);
+        }
+
+        return null;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @param $action
@@ -1645,5 +1666,21 @@ class LeadModel extends FormModel
         }
 
         return $results;
+    }
+    public function getEntitiesLight(array $args = array())
+    {
+    	//set the translator
+    	 $repo = $this->em->getRepository('MauticLeadBundle:Lead');
+    
+    	if ($repo !== null) {
+    		$repo->setTranslator($this->translator);
+    		$repo->setCurrentUser(
+    				$this->factory->getUser()
+    				);
+    		return $repo->getEntitiesLight($args);
+    	}
+    	
+    
+    	return array();
     }
 }

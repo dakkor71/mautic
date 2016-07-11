@@ -499,6 +499,9 @@ class LeadListRepository extends CommonRepository
                         }
                         break;
                     case 'date':
+                        if ($details['filter'] === "(birthday)") {
+                            $details['filter'] = '-'.date("m-d");
+                        }
                         if (!$columnType instanceof DateType && !$columnType instanceof UTCDateTimeType) {
                             $field = $formatter->toDate($field);
                         }
@@ -714,7 +717,7 @@ class LeadListRepository extends CommonRepository
             switch ($details['field']) {
                 case 'hit_url':
                     $operand = (($func == 'eq') || ($func == 'like')) ? 'EXISTS' : 'NOT EXISTS';
-                    
+
                     $subqb = $this->_em->getConnection()
                         ->createQueryBuilder()
                         ->select('null')
@@ -723,7 +726,7 @@ class LeadListRepository extends CommonRepository
                         case 'eq':
                         case 'neq':
                             $parameters[$parameter] = $details['filter'];
-                            
+
                             $subqb->where($q->expr()
                                 ->andX($q->expr()
                                 ->eq($alias . '.url', $exprParameter), $q->expr()
@@ -750,24 +753,26 @@ class LeadListRepository extends CommonRepository
                 case 'dnc_unsubscribed':
                 case 'dnc_bounced_sms':
                 case 'dnc_unsubscribed_sms':
-                    // Special handling of do not email
+                    // Special handling of do not contact
                     $func = (($func == 'eq' && $details['filter']) || ($func == 'neq' && !$details['filter'])) ? 'EXISTS' : 'NOT EXISTS';
 
-                    $parts = explode('_', $details['field']);
+                    $parts   = explode('_', $details['field']);
                     $channel = 'email';
 
                     if (count($parts) === 3) {
                         $channel = $parts[2];
                     }
 
+                    $channelParameter = $this->generateRandomParameterName();
+
                     $subqb = $this->_em->getConnection()->createQueryBuilder()
                         ->select('null')
-                        ->from(MAUTIC_TABLE_PREFIX . 'lead_donotcontact', $alias)
+                        ->from(MAUTIC_TABLE_PREFIX.'lead_donotcontact', $alias)
                         ->where(
                             $q->expr()->andX(
-                                $q->expr()->eq($alias . '.reason', $exprParameter),
-                                $q->expr()->eq($alias . '.lead_id', 'l.id'),
-                                $q->expr()->eq($alias . '.channel', $channel)
+                                $q->expr()->eq($alias.'.reason', $exprParameter),
+                                $q->expr()->eq($alias.'.lead_id', 'l.id'),
+                                $q->expr()->eq($alias.'.channel', ":$channelParameter")
                             )
                         );
 
@@ -787,7 +792,8 @@ class LeadListRepository extends CommonRepository
 
                     $ignoreAutoFilter = true;
 
-                    $parameters[$parameter] = ($parts[1] === 'bounced') ? DoNotContact::BOUNCED : DoNotContact::UNSUBSCRIBED;
+                    $parameters[$parameter]        = ($parts[1] === 'bounced') ? DoNotContact::BOUNCED : DoNotContact::UNSUBSCRIBED;
+                    $parameters[$channelParameter] = $channel;
 
                     break;
 

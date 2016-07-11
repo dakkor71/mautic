@@ -18,7 +18,7 @@ use Mautic\EmailBundle\Swiftmailer\Transport\AmazonTransport;
 use Mautic\EmailBundle\Swiftmailer\Transport\MandrillTransport;
 use Mautic\EmailBundle\Swiftmailer\Transport\PostmarkTransport;
 use Mautic\EmailBundle\Swiftmailer\Transport\SendgridTransport;
-
+use Mautic\EmailBundle\Swiftmailer\Transport\MailjetTransport;
 /**
  * Class AjaxController
  *

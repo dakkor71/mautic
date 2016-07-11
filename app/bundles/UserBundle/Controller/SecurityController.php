@@ -105,4 +105,10 @@ class SecurityController extends CommonController
             )
         ));
     }
+
+    /**
+     * Do nothing
+     */
+    public function loginCheckAction() {}
+
 }

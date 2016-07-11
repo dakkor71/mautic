@@ -267,6 +267,21 @@ return array(
                 'path'       => '/contacts/list/fields',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:getFields'
             ),
+        	'mautic_api_editpointslead' => array(
+        		'path' => '/leads/{id}/setpoints/{points}',
+        		'controller' => 'MauticLeadBundle:Api\LeadApi:setPoints',
+        		'method'     => 'PATCH'
+        	),
+        	'mautic_api_addpointslead' => array(
+        			'path' => '/leads/{id}/addpoints/{points}',
+        			'controller' => 'MauticLeadBundle:Api\LeadApi:addPoints',
+        			'method' => 'PATCH'
+        	),
+        	'mautic_api_subtractpointslead' => array(
+        			'path' => '/leads/{id}/subtractpoints/{points}',
+        			'controller' => 'MauticLeadBundle:Api\LeadApi:subtractPoints',
+        			'method'     => 'PATCH'
+        	),
             'mautic_api_getleadlists'      => array(
                 'path'       => '/contacts/list/segments',
                 'controller' => 'MauticLeadBundle:Api\ListApi:getLists'
@@ -299,6 +314,11 @@ return array(
             'mautic_api_getlead_bc'           => array(
                 'path'       => '/leads/{id}',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:getEntity'
+            ),
+            //Nouvelle route pour l'historique
+            'mautic_api_getleadhistory_bc'           => array(
+                'path'       => '/leads/{id}/history',
+                'controller' => 'MauticLeadBundle:Api\LeadApi:getEntityHistory'
             ),
             'mautic_api_editputlead_bc'       => array(
                 'path'       => '/leads/{id}/edit',
