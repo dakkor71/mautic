@@ -441,7 +441,7 @@ class AjaxController extends CommonController
             // the cache is cleared by upgrade.php
             /** @var \Mautic\CoreBundle\Helper\CookieHelper $cookieHelper */
             $cookieHelper = $this->factory->getHelper('cookie');
-            $cookieHelper->delete('mautic_update');
+            $cookieHelper->deleteCookie('mautic_update');
         } else {
             // Extract the archive file now
             if (!$zipper->extractTo(dirname($this->container->getParameter('kernel.root_dir')).'/upgrade')) {
