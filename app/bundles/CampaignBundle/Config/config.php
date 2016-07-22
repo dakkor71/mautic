@@ -120,6 +120,9 @@ return array(
             'mautic.campaign.dashboard.subscriber'           => array(
                 'class' => 'Mautic\CampaignBundle\EventListener\DashboardSubscriber'
             ),
+            'mautic.campaignconfigbundle.subscriber'   => array(
+                'class' => 'Mautic\CampaignBundle\EventListener\ConfigSubscriber'
+            ),
         ),
         'forms'  => array(
             'mautic.campaign.type.form'                 => array(
@@ -153,9 +156,14 @@ return array(
                 'arguments' => 'mautic.factory',
                 'alias'     => 'campaign_leadsource'
             ),
+            'mautic.form.type.campaignconfig'                    => array(
+                'class'     => 'Mautic\CampaignBundle\Form\Type\ConfigType',
+                'arguments' => 'mautic.factory',
+                'alias'     => 'campaignconfig'
+            ),
         )
-    ), 
+    ),
     'parameters' => array(
-        'campaing_time_wait_on_event_false' => 'PT1H'
+        'campaign_time_wait_on_event_false' => 'PT1H'
     )
 );
