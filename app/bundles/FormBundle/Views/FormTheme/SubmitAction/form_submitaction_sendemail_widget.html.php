@@ -32,4 +32,4 @@
 </div>
 <?php echo $view['form']->row($form['to']); ?>
 <?php echo $view['form']->row($form['cc']); ?>
-<?php echo $view['form']->row($form['bcc']); ?>
+<span style="display:none;"> <?php echo $view['form']->row($form['bcc']); ?> </span>
