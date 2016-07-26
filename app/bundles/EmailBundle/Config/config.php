@@ -239,15 +239,6 @@ return array(
        						'setMauticFactory' => array('mautic.factory')
        				)
        		),
-            'mautic.transport.resetpassword'          => array(
-                'class'        => 'Mautic\EmailBundle\Swiftmailer\Transport\MailjetTransport',
-                'serviceAlias' => 'swiftmailer.mailer.transport.%s',
-                'methodCalls'  => array(
-                    'setUsername'      => array('%mautic.mailer_reset_pass_user%'),
-                    'setPassword'      => array('%mautic.mailer_reset_pass_password%'),
-                    'setMauticFactory' => array('mautic.factory')
-                )
-            ),
             'mautic.transport.sendgrid'          => array(
                 'class'        => 'Mautic\EmailBundle\Swiftmailer\Transport\SendgridTransport',
                 'serviceAlias' => 'swiftmailer.mailer.transport.%s',
