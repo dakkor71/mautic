@@ -76,7 +76,7 @@ class AjaxController extends CommonAjaxController
                 );
             } else {
                 $results = $this->getModel('lead.field')->getLookupResults($field, $filter);
-                foreach ($results as $r) { 
+                foreach ($results as $r) {
                     $dataArray[] = array('value' => $r[$field]);
                 }
             }
@@ -539,7 +539,7 @@ class AjaxController extends CommonAjaxController
                 }
             }
 
-            $leadModel = $this->getModel('lead');
+            $leadModel = $this->factory->getModel('lead');
 
             if (!empty($newTags)) {
                 $leadModel->getTagRepository()->saveEntities($newTags);
