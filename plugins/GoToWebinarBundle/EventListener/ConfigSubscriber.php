@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @package     GoToWebinar
  * @copyright   2016 Webmecanik. All rights reserved.
@@ -18,23 +18,23 @@ use Mautic\ConfigBundle\Event\ConfigBuilderEvent;
  */
 class ConfigSubscriber extends CommonSubscriber
 {
-	static public function getSubscribedEvents () 
+	static public function getSubscribedEvents ()
 	{
 		return array(
 			ConfigEvents::CONFIG_ON_GENERATE => array('onConfigGenerate', 0)
 		);
 	}
-	
-	public function onConfigGenerate (ConfigBuilderEvent $event) 
+
+	public function onConfigGenerate (ConfigBuilderEvent $event)
 	{
 		$event->addForm(
             array(
 				'bundle' => 'GoToWebinarBundle',
                 'formAlias'  => 'gotowebinar_formtype_config',
                 'formTheme'  => 'GoToWebinarBundle:Config',
-                'parameters' => $event->getParametersFromConfig('GoToWebinarBundle')
+                'parameters' => $event->getParameters('/config/local.php')
             )
         );
 	}
-	
+
 }

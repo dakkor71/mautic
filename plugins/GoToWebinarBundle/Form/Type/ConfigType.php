@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * @package     GoToWebinar
  * @copyright   2016 Webmecanik. All rights reserved.
@@ -29,7 +29,7 @@ class ConfigType extends AbstractType
 				'class' => 'form-control'
 			)
 		));
-		
+
 		$builder->add('oauth_button', 'standalone_button', array(
 			'label' => 'plugin.gotowebinar.config.oauth_button.label',
 			'required' => false,
@@ -37,27 +37,31 @@ class ConfigType extends AbstractType
 				'class'   => 'oauth btn btn-success'
 			)
 		));
-		
+
 		$builder->add('gotowebinar_access_token', 'text', array(
 			'label' => 'plugin.gotowebinar.config.access_token.label',
 			'required' => false,
 			'label_attr' => array('class' => 'control-label'),
+		    'mapped'=>false,
+		    'data'=>is_null($builder->getOptions()['data']['gotowebinar_access_token'])?'':$builder->getOptions()['data']['gotowebinar_access_token'],
 			'attr' => array(
 				'class' => 'form-control',
 				'disabled' => 'disabled'
 			)
 		));
-		
+
 		$builder->add('gotowebinar_organizer_key', 'text', array(
 			'label' => 'plugin.gotowebinar.config.organizer_key.label',
 			'required' => false,
 			'label_attr' => array('class' => 'control-label'),
+		    'mapped'=>false,
+		    'data'=>is_null($builder->getOptions()['data']['gotowebinar_organizer_key'])?'':$builder->getOptions()['data']['gotowebinar_organizer_key'],
 			'attr' => array(
 				'class' => 'form-control',
 				'disabled' => 'disabled'
 			)
 		));
-		
+
 		$builder->add('check_api_button', 'standalone_button', array(
 			'label' => 'plugin.gotowebinar.config.check_api_button.label',
 			'required' => false,
@@ -66,8 +70,8 @@ class ConfigType extends AbstractType
 			)
 		));
 	}
-	
-	public function getName () 
+
+	public function getName ()
 	{
 		return 'gotowebinar_formtype_config';
 	}
