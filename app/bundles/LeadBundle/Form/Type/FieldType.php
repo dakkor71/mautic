@@ -308,9 +308,13 @@ class FieldType extends AbstractType
         $builder->add(
             'isPublished',
             'yesno_button_group',
-            array(
+            /*array(
                 'disabled' => $disabled,
                 'data'     => $data
+            )*/
+            array (
+                'disabled' => ($options['data']->getAlias() == 'email'),
+                'data' => ($options['data']->getAlias() == 'email') ? true : $options['data']->getIsPublished()
             )
         );
 
