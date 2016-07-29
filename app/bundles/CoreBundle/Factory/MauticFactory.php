@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManager;
 use Mautic\CoreBundle\Entity\IpAddress;
 use Mautic\CoreBundle\Exception\FileNotFoundException;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
+use Mautic\CoreBundle\Model\AbstractCommonModel;
 use Mautic\EmailBundle\Helper\MailHelper;
 use Mautic\CoreBundle\Templating\Helper\ThemeHelper;
 use Mautic\UserBundle\Entity\User;
@@ -25,10 +26,11 @@ use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 /**
  * Mautic's Factory
+ * 
+ * @deprecated 2.0 to be removed in 3.0
  */
 class MauticFactory
 {
-
     /**
      *
      * @var ContainerInterface
@@ -48,6 +50,7 @@ class MauticFactory
      *
      */
     private $entityManager = null;
+<<<<<<< HEAD
 
     /**
      *
@@ -61,6 +64,9 @@ class MauticFactory
      */
     private $mailHelperResetPass = null;
 
+=======
+    
+>>>>>>> mautic_officiel/master
     /**
      *
      * @param ContainerInterface $container
@@ -71,14 +77,22 @@ class MauticFactory
     }
 
     /**
+<<<<<<< HEAD
      *
      * @param string $name
+=======
+     * Get a model instance from the service container
+>>>>>>> mautic_officiel/master
      *
-     * @return \Mautic\CoreBundle\Model\CommonModel
-     * @throws NotAcceptableHttpException
+     * @param $modelNameKey
+     *
+     * @return AbstractCommonModel
+     * 
+     * @throws \InvalidArgumentException
      */
-    public function getModel($name)
+    public function getModel($modelNameKey)
     {
+<<<<<<< HEAD
         static $models = array();
 
         // shortcut for models with same name as bundle
@@ -115,9 +129,28 @@ class MauticFactory
             if (method_exists($models[$name], 'initialize')) {
                 $models[$name]->initialize();
             }
+=======
+        // Shortcut for models with the same name as the bundle
+        if (strpos($modelNameKey, '.') === false) {
+            $modelNameKey = "$modelNameKey.$modelNameKey";
         }
 
-        return $models[$name];
+        $parts = explode('.', $modelNameKey);
+
+        if (count($parts) !== 2) {
+            throw new \InvalidArgumentException($modelNameKey . " is not a valid model key.");
+>>>>>>> mautic_officiel/master
+        }
+
+        list($bundle, $name) = $parts;
+
+        $containerKey = str_replace(array('%bundle%', '%name%'), array($bundle, $name), 'mautic.%bundle%.model.%name%');
+
+        if ($this->container->has($containerKey)) {
+            return $this->container->get($containerKey);
+        }
+        
+        throw new \InvalidArgumentException($containerKey . ' is not a registered container key.');
     }
 
     /**
@@ -149,6 +182,7 @@ class MauticFactory
      */
     public function getUser($nullIfGuest = false)
     {
+<<<<<<< HEAD
         $token = $this->getSecurityContext()->getToken();
         $user = ($token !== null) ? $token->getUser() : null;
 
@@ -162,6 +196,9 @@ class MauticFactory
         }
 
         return $user;
+=======
+        return $this->container->get('mautic.helper.user')->getUser($nullIfGuest);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -224,6 +261,7 @@ class MauticFactory
      */
     public function getSchemaHelper($type, $name = null)
     {
+<<<<<<< HEAD
         static $schemaHelpers = array();
 
         if (empty($schemaHelpers[$type])) {
@@ -242,6 +280,9 @@ class MauticFactory
         }
 
         return $schemaHelpers[$type];
+=======
+        return $this->container->get('mautic.schema.helper.factory')->getSchemaHelper($type, $name);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -280,6 +321,7 @@ class MauticFactory
      */
     public function getTemplating()
     {
+<<<<<<< HEAD
         if (defined('IN_MAUTIC_CONSOLE')) {
             // enter the request scope in order to be use the templating.helper.assets service
             $this->container->enterScope('request');
@@ -287,6 +329,9 @@ class MauticFactory
         }
 
         return $this->container->get('templating');
+=======
+        return $this->container->get('mautic.helper.templating')->getTemplating();
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -349,12 +394,16 @@ class MauticFactory
      */
     public function getParameter($id, $default = false)
     {
+<<<<<<< HEAD
         if ($id == 'db_table_prefix' && defined('MAUTIC_TABLE_PREFIX')) {
             // use the constant in case in the installer
             return MAUTIC_TABLE_PREFIX;
         }
 
         return ($this->container->hasParameter('mautic.' . $id)) ? $this->container->getParameter('mautic.' . $id) : $default;
+=======
+        return $this->container->get('mautic.helper.core_parameters')->getParameter($id, $default);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -368,6 +417,7 @@ class MauticFactory
      */
     public function getDate($string = null, $format = null, $tz = 'local')
     {
+<<<<<<< HEAD
         static $dates;
 
         if (!empty($string)) {
@@ -385,6 +435,8 @@ class MauticFactory
         }
 
         // now so generate a new helper
+=======
+>>>>>>> mautic_officiel/master
         return new DateTimeHelper($string, $format, $tz);
     }
 
@@ -411,6 +463,7 @@ class MauticFactory
      */
     public function getSystemPath($name, $fullPath = false)
     {
+<<<<<<< HEAD
         $paths = $this->getParameter('paths');
 
         if ($name == 'currentTheme' || $name == 'current_theme') {
@@ -467,6 +520,9 @@ class MauticFactory
         }
 
         return $path;
+=======
+        return $this->container->get('mautic.helper.paths')->getSystemPath($name, $fullPath);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -517,6 +573,7 @@ class MauticFactory
      */
     public function getTheme($theme = 'current', $throwException = false)
     {
+<<<<<<< HEAD
         static $themeHelpers = array();
 
         if (empty($themeHelpers[$theme])) {
@@ -568,11 +625,15 @@ class MauticFactory
         }
 
         return $themeHelpers[$theme];
+=======
+        return $this->container->get('mautic.helper.theme')->getTheme($theme, $throwException);
+>>>>>>> mautic_officiel/master
     }
 
     /**
      * Gets a list of installed themes
      *
+<<<<<<< HEAD
      * @param string $specificFeature
      *            limits list to those that support a specific feature
      *
@@ -613,6 +674,16 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
         }
 
         return $themes[$specificFeature];
+=======
+     * @param string $specificFeature limits list to those that support a specific feature
+     * @param boolean $extended returns extended information about the themes
+     *
+     * @return array
+     */
+    public function getInstalledThemes($specificFeature = 'all', $extended = false)
+    {
+        return $this->container->get('mautic.helper.theme')->getInstalledThemes($specificFeature, $extended);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -625,6 +696,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getMailer($cleanSlate = true)
     {
+<<<<<<< HEAD
         if ($this->mailHelper == null) {
             $this->mailHelper = new MailHelper($this, $this->container->get('mailer'), array(
                 $this->getParameter('mailer_from_email') => $this->getParameter('mailer_from_name')
@@ -634,6 +706,9 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
         }
 
         return $this->mailHelper;
+=======
+        return $this->container->get('mautic.helper.mailer')->getMailer($cleanSlate);
+>>>>>>> mautic_officiel/master
     }
 
     public function getMailerResetPassword($cleanSlate = true)
@@ -666,6 +741,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getIpAddressFromRequest()
     {
+<<<<<<< HEAD
         $request = $this->getRequest();
         $ipHolders = array(
             'HTTP_CLIENT_IP',
@@ -705,6 +781,9 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
 
         // if everything else fails
         return '127.0.0.1';
+=======
+        return $this->container->get('mautic.helper.ip_lookup')->getIpAddressFromRequest();
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -716,6 +795,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getIpAddress($ip = null)
     {
+<<<<<<< HEAD
         static $ipAddresses = array();
 
         if ($ip === null) {
@@ -778,6 +858,9 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
         }
 
         return $ipAddresses[$ip];
+=======
+        return $this->container->get('mautic.helper.ip_lookup')->getIpAddress($ip);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -851,6 +934,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getMauticBundles($includePlugins = false)
     {
+<<<<<<< HEAD
         $bundles = $this->container->getParameter('mautic.bundles');
         if ($includePlugins) {
             $plugins = $this->container->getParameter('mautic.plugin.bundles');
@@ -858,6 +942,9 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
         }
 
         return $bundles;
+=======
+        return $this->container->get('mautic.helper.bundle')->getMauticBundles($includePlugins);
+>>>>>>> mautic_officiel/master
     }
 
     /**
@@ -867,7 +954,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getPluginBundles()
     {
-        return $this->getKernel()->getPluginBundles();
+        return $this->container->get('mautic.helper.bundle')->getPluginBundles();
     }
 
     /**
@@ -883,6 +970,7 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
      */
     public function getBundleConfig($bundleName, $configKey = '', $includePlugins = false)
     {
+<<<<<<< HEAD
         // get the configs
         $configFiles = $this->getMauticBundles($includePlugins);
 
@@ -911,6 +999,9 @@ elseif (file_exists($theme->getRealPath() . '/config.php')) {
 
         // we didn't throw so we can send the key value
         return $bundleConfig[$configKey];
+=======
+        return $this->container->get('mautic.helper.bundle')->getBundleConfig($bundleName, $configKey, $includePlugins);
+>>>>>>> mautic_officiel/master
     }
 
     /**

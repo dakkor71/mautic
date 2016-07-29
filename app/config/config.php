@@ -13,12 +13,7 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
     if (strpos($namespace, 'MauticPlugin\\') !== false) {
         $isPlugin = true;
         $bundleBase = $bundle;
-        $relative = $paths['plugins'] . '/' . $bundleBase;
-    } elseif (strpos($namespace, 'MauticAddon\\') !== false) {
-        // @deprecated 1.1.4; to be removed in 2.0; BC support for MauticAddon
-        $isPlugin = true;
-        $bundleBase = $bundle;
-        $relative = 'addons/' . $bundleBase;
+        $relative   = $paths['plugins'].'/'.$bundleBase;
     } elseif (strpos($namespace, 'Mautic\\') !== false) {
         $isMautic = true;
         $bundleBase = str_replace('Mautic', '', $bundle);
@@ -32,6 +27,16 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
         // Check for a single config file
         $config = (file_exists($directory . '/Config/config.php')) ? include $directory . '/Config/config.php' : array();
 
+        // Services need to have percent signs escaped to prevent ParameterCircularReferenceException
+        if (isset($config['services'])) {
+            array_walk_recursive(
+                $config['services'],
+                function (&$v, $k) {
+                    $v = str_replace('%', '%%', $v);
+                }
+            );
+        }
+
         // Register IP lookup services
         if (isset($config['ip_lookup_services'])) {
             $ipLookupServices = array_merge($ipLookupServices, $config['ip_lookup_services']);
@@ -44,12 +49,6 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
                 ->notName('*Repository.php');
 
             foreach ($finder as $file) {
-                // @deprecated 1.1.4; to be removed in 2.0; BC support for Addon
-                if (strpos($baseNamespace, 'PluginBundle') !== false && $file->getFilename() == 'Addon.php') {
-                    // Do not include this class as it's used for BC support
-                    continue;
-                }
-
                 // Check to see if entities are organized by subfolder
                 $subFolder = $file->getRelativePath();
 
@@ -93,7 +92,7 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
     return false;
 };
 
-// Seperate out Mautic's bundles from other Symfony bundles
+// Separate out Mautic's bundles from other Symfony bundles
 $symfonyBundles = $container->getParameter('kernel.bundles');
 $mauticBundles = array_filter(array_map($buildBundles, $symfonyBundles, array_keys($symfonyBundles)), function ($v) {
     return (!empty($v));
@@ -198,8 +197,9 @@ $dbalSettings = array(
     'mapping_types' => array(
         'enum' => 'string',
         'point' => 'string',
-        'bit' => 'string'
-    )
+        'bit'   => 'string',
+    ),
+    'server_version' => '%mautic.db_server_version%'
 );
 
 // If using pdo_sqlite as the database driver, add the path to config file

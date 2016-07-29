@@ -10,6 +10,7 @@
 namespace Mautic\UserBundle\Model;
 
 use Mautic\CoreBundle\Model\FormModel;
+use Mautic\EmailBundle\Helper\MailHelper;
 use Mautic\UserBundle\Event\StatusChangeEvent;
 use Mautic\UserBundle\Event\UserEvent;
 use Mautic\UserBundle\UserEvents;
@@ -23,6 +24,16 @@ use Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface;
  */
 class UserModel extends FormModel
 {
+    /**
+     * @var MailHelper
+     */
+    protected $mailHelper;
+    
+    public function __construct(MailHelper $mailHelper)
+    {
+        $this->mailHelper = $mailHelper;
+    }
+
     /**
      * Define statuses that are supported
      *
@@ -241,16 +252,25 @@ class UserModel extends FormModel
      */
     public function sendResetEmail(User $user)
     {
+<<<<<<< HEAD
         $mailer = $this->factory->getMailerResetPassword();
+=======
+        $mailer = $this->mailHelper->getMailer();
+>>>>>>> mautic_officiel/master
 
         $resetToken = $this->getResetToken($user);
-        $resetLink = $this->factory->getKernel()->getContainer()->get('router')->generate('mautic_user_passwordresetconfirm', array('token' => $resetToken), true);
+        $resetLink = $this->router->generate('mautic_user_passwordresetconfirm', array('token' => $resetToken), true);
 
         $mailer->setTo(array($user->getEmail() => $user->getName()));
         $mailer->setSubject($this->translator->trans('mautic.user.user.passwordreset.subject'));
         $body = $this->translator->trans('mautic.user.user.passwordreset.email.body', array('%name%' => $user->getFirstName(), '%resetlink%' => $resetLink));
+<<<<<<< HEAD
         $body = str_replace('\\n', "<br>", $body);
         $mailer->setBody($body, 'text/html');
+=======
+        $body = str_replace('\\n', "\n", $body);
+        $mailer->setBody($body, 'text/plain', null, true);
+>>>>>>> mautic_officiel/master
 
         $mailer->send();
     }
@@ -265,7 +285,7 @@ class UserModel extends FormModel
     public function setPreference ($key, $value = null, User $user = null)
     {
         if ($user == null) {
-            $user = $this->factory->getUser();
+            $user = $this->user;
         }
 
         $preferences       = $user->getPreferences();
@@ -288,7 +308,7 @@ class UserModel extends FormModel
     public function getPreference ($key, $default = null, User $user = null)
     {
         if ($user == null) {
-            $user = $this->factory->getUser();
+            $user = $this->user;
         }
         $preferences = $user->getPreferences();
 
@@ -303,15 +323,13 @@ class UserModel extends FormModel
         $status = strtolower($status);
 
         if (in_array($status, $this->supportedOnlineStatuses)) {
-            $user = $this->factory->getUser();
-            if ($user->getId()) {
-                $user->setOnlineStatus($status);
-                $this->getRepository()->saveEntity($user);
+            if ($this->user->getId()) {
+                $this->user->setOnlineStatus($status);
+                $this->getRepository()->saveEntity($this->user);
 
-                $dispatcher = $this->factory->getDispatcher();
-                if ($dispatcher->hasListeners(UserEvents::STATUS_CHANGE)) {
-                    $event = new StatusChangeEvent($this->factory);
-                    $dispatcher->dispatch(UserEvents::STATUS_CHANGE, $event);
+                if ($this->dispatcher->hasListeners(UserEvents::STATUS_CHANGE)) {
+                    $event = new StatusChangeEvent($this->user);
+                    $this->dispatcher->dispatch(UserEvents::STATUS_CHANGE, $event);
                 }
             }
         }

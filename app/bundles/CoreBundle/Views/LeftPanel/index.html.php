@@ -7,7 +7,7 @@
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-// $pinned = ($app->getSession()->get("left-panel", 'default') == 'unpinned') ? ' unpinned' : '';
+$extraMenu = $view['menu']->render('extra');
 ?>
 <!-- start: sidebar-header -->
 <div class="sidebar-header" style="background-color:#E40050"> <?php // version_atmt ?>
@@ -18,6 +18,14 @@
 		<img src="<?php echo $view['assets']->getUrl('media/images/automation_logo_mautic.png')?>" style="float:left;"/>  <?php // version_atmt ?>
         <!--/ logo text -->
     </a>
+    <?php if (!empty($extraMenu)): ?>
+        <div class="dropdown extra-menu">
+            <a href="#" data-toggle="dropdown" class="dropdown-toggle">
+                <i class="fa fa-chevron-down fa-lg"></i>
+            </a>
+            <?php echo $extraMenu; ?>
+        </div>
+    <?php endif; ?>
     <!--/ brand -->
 </div>
 <!--/ end: sidebar-header -->
@@ -28,7 +36,7 @@
     <div class="scroll-content slimscroll">
         <!-- start: navigation -->
         <nav class="nav-sidebar">
-            <?php echo $view['knp_menu']->render('main', array("menu" => "main")); ?>
+            <?php echo $view['menu']->render('main'); ?>
 
             <!-- start: left nav -->
             <ul class="nav sidebar-left-dark">

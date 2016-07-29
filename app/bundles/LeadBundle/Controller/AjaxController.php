@@ -76,7 +76,7 @@ class AjaxController extends CommonAjaxController
                 );
             } else {
                 $results = $this->getModel('lead.field')->getLookupResults($field, $filter);
-                foreach ($results as $r) {
+                foreach ($results as $r) { 
                     $dataArray[] = array('value' => $r[$field]);
                 }
             }
@@ -539,7 +539,7 @@ class AjaxController extends CommonAjaxController
                 }
             }
 
-            $leadModel = $this->factory->getModel('lead');
+            $leadModel = $this->getModel('lead');
 
             if (!empty($newTags)) {
                 $leadModel->getTagRepository()->saveEntities($newTags);
@@ -650,6 +650,7 @@ class AjaxController extends CommonAjaxController
         if ($leadField && in_array($leadField->getType(), $choiceTypes)) {
             $properties = $leadField->getProperties();
             $fieldType  = $leadField->getType();
+            $options    = [];
             if (!empty($properties['list'])) {
                 // Lookup/Select options
                 $options = explode('|', $properties['list']);
