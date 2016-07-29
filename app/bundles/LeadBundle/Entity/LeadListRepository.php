@@ -30,7 +30,7 @@ use Mautic\LeadBundle\Event\LeadListFilteringEvent;
  */
 class LeadListRepository extends CommonRepository
 {
-	
+
     /**
      * {@inheritdoc}
      *
@@ -694,7 +694,7 @@ class LeadListRepository extends CommonRepository
                         $key = $string;
                         $isRelative = true;
                     }
-                    
+
                     if ($isRelative) {
                         if ($requiresBetween) {
                             $startWith = ($isTimestamp) ? $dtHelper->toUtcString('Y-m-d H:i:s') : $dtHelper->toUtcString('Y-m-d');
@@ -731,17 +731,17 @@ class LeadListRepository extends CommonRepository
 			$dispatcher = $this->factory->getDispatcher();
 			$isFilteringDone = false;
 			if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_ON_FILTERING)) {
-				
+
 				$event = new LeadListFilteringEvent($details, $leadId, $alias, $func, $q, $this->_em);
 				$dispatcher->dispatch(LeadEvents::LIST_FILTERS_ON_FILTERING, $event);
-				
+
 				// If filtering matched, insert sub-query
 				$isFilteringDone = $event->isFilteringDone();
 				if ($isFilteringDone) {
 					$groupExpr->add($event->getSubQuery());
 				}
 			}
-			
+
 			if ( !$isFilteringDone) {
             switch ($details['field']) {
                 case 'hit_url':
@@ -793,10 +793,6 @@ class LeadListRepository extends CommonRepository
                     }
 
                     $channelParameter = $this->generateRandomParameterName();
-<<<<<<< HEAD
-
-=======
->>>>>>> mautic_officiel/master
                     $subqb = $this->_em->getConnection()->createQueryBuilder()
                         ->select('null')
                         ->from(MAUTIC_TABLE_PREFIX.'lead_donotcontact', $alias)
@@ -1142,7 +1138,7 @@ class LeadListRepository extends CommonRepository
                     'negate_expr' => 'in'
                 ),
         );
-		
+
 		// Add custom filters operators
 		$dispatcher = $this->factory->getDispatcher();
 		if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE)) {
@@ -1150,7 +1146,7 @@ class LeadListRepository extends CommonRepository
 			$dispatcher->dispatch(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE, $event);
 			$operatorOptions = $event->getOperators();
 		}
-		
+
         return ($operator === null) ? $operatorOptions : $operatorOptions[$operator];
     }
 

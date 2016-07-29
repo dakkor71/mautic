@@ -134,7 +134,7 @@ if ($permissions['lead:leads:editown'] || $permissions['lead:leads:editother']) 
     		'attr'      => array(
     			'class'       => 'hidden-xs btn btn-default btn-sm btn-nospin',
     			'data-toggle' => 'download',
-    			'href'        => $view['router']->generate('mautic_lead_action', array('objectAction' => 'exportCurrentList')),
+    			'href'        => $view['router']->generate('mautic_segment_action', array('objectAction' => 'exportCurrentList')),
     			'data-header' => $view['translator']->trans('mautic.form.result.export.csv'),
     		),
     		'tooltip' => $view['translator']->trans('mautic.form.result.export.csv'),

@@ -121,10 +121,7 @@ class SecurityController extends CommonController
     /**
      * Do nothing
      */
-<<<<<<< HEAD
-    public function loginCheckAction() {}
 
-=======
     public function loginCheckAction()
     {
 
@@ -156,5 +153,4 @@ class SecurityController extends CommonController
 
         return new RedirectResponse($this->generateUrl('login'));
     }
->>>>>>> mautic_officiel/master
 }

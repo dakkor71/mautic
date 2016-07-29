@@ -43,7 +43,7 @@ class PointModel extends CommonFormModel
      * @var Session
      */
     protected $session;
-    
+
     /**
      * @var IpLookupHelper
      */
@@ -56,7 +56,7 @@ class PointModel extends CommonFormModel
 
     /**
      * PointModel constructor.
-     * 
+     *
      * @param Session $session
      * @param IpLookupHelper $ipLookupHelper
      * @param LeadModel $leadModel
@@ -191,24 +191,13 @@ class PointModel extends CommonFormModel
      */
     public function triggerAction($type, $eventDetails = null, $typeId = null, Lead $lead = null)
     {
-<<<<<<< HEAD
-    	
-    	if($type != "api.call") {
-        	//only trigger actions for anonymous users
-    		if (!$this->security->isAnonymous()) {
-    			return;
-    		}
-    	}
-    	
-        if ($typeId !== null && $this->factory->getEnvironment() == 'prod') { 	
-=======
+
         //only trigger actions for anonymous users
         if (!$this->security->isAnonymous()) {
             return;
         }
 
         if ($typeId !== null && MAUTIC_ENV === 'prod') {
->>>>>>> mautic_officiel/master
             //let's prevent some unnecessary DB calls
             $triggeredEvents = $this->session->get('mautic.triggered.point.actions', array());
             if (in_array($typeId, $triggeredEvents)) {
@@ -231,7 +220,7 @@ class PointModel extends CommonFormModel
                 return;
             }
         }
-        
+
         //get available actions
         $availableActions = $this->getPointActions();
 
@@ -284,9 +273,9 @@ class PointModel extends CommonFormModel
                     } else {
                         $pass[] = null;
                     }
-                }        
+                }
                 $pointsChange = $reflection->invokeArgs($this, $pass);
-                
+
                 if ($pointsChange) {
                     $delta = $action->getDelta();
                     $lead->addToPoints($delta);
@@ -298,7 +287,7 @@ class PointModel extends CommonFormModel
                         $delta,
                         $ipAddress
                     );
-                    
+
                     $event = new PointActionEvent($action, $lead);
                     $this->dispatcher->dispatch(PointEvents::POINT_ON_ACTION, $event);
 
@@ -312,7 +301,7 @@ class PointModel extends CommonFormModel
                 }
             }
         }
-        
+
         if (!empty($persist)) {
             $this->leadModel->saveEntity($lead);
             $this->getRepository()->saveEntities($persist);

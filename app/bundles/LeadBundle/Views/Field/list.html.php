@@ -51,11 +51,7 @@ if ($tmpl == 'index')
                 <td>
                     <span class="ellipsis">
                         <?php echo $view->render('MauticCoreBundle:Helper:publishstatus_icon.html.php',array('item' => $item, 'model' => 'lead.field', 'disableToggle' => ($item->getAlias() == 'email'))); ?>
-<<<<<<< HEAD
-                        <a href="<?php echo $view['router']->generate('mautic_leadfield_action', array('objectAction' => 'edit', 'objectId' => $item->getId())); ?>"><?php echo $item->getLabel(); ?></a>
-=======
                         <a href="<?php echo $view['router']->path('mautic_contactfield_action', array('objectAction' => 'edit', 'objectId' => $item->getId())); ?>"><?php echo $item->getLabel(); ?></a>
->>>>>>> mautic_officiel/master
                     </span>
                 </td>
                 <td class="visible-md visible-lg"><?php echo $item->getAlias(); ?></td>

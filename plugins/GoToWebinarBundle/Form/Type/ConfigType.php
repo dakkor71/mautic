@@ -43,7 +43,7 @@ class ConfigType extends AbstractType
 			'required' => false,
 			'label_attr' => array('class' => 'control-label'),
 		    'mapped'=>false,
-		    'data'=>is_null($builder->getOptions()['data']['gotowebinar_access_token'])?'':$builder->getOptions()['data']['gotowebinar_access_token'],
+		    'data'=>!isset($builder->getOptions()['data']['gotowebinar_access_token'])?'':$builder->getOptions()['data']['gotowebinar_access_token'],
 			'attr' => array(
 				'class' => 'form-control',
 				'disabled' => 'disabled'
@@ -55,7 +55,7 @@ class ConfigType extends AbstractType
 			'required' => false,
 			'label_attr' => array('class' => 'control-label'),
 		    'mapped'=>false,
-		    'data'=>is_null($builder->getOptions()['data']['gotowebinar_organizer_key'])?'':$builder->getOptions()['data']['gotowebinar_organizer_key'],
+		    'data'=>!isset($builder->getOptions()['data']['gotowebinar_organizer_key'])?'':$builder->getOptions()['data']['gotowebinar_organizer_key'],
 			'attr' => array(
 				'class' => 'form-control',
 				'disabled' => 'disabled'
