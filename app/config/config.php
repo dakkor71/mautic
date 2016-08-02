@@ -1,31 +1,30 @@
 <?php
-use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Reference;
-
 include __DIR__ . '/paths_helper.php';
 
-$ormMappings = $serializerMappings = $ipLookupServices = array();
+$ormMappings =
+$serializerMappings =
+$ipLookupServices = array();
 
-// Note Mautic specific bundles so they can be applied as needed without having to specify them individually
-$buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &$ormMappings, &$serializerMappings, &$ipLookupServices) {
+//Note Mautic specific bundles so they can be applied as needed without having to specify them individually
+$buildBundles = function($namespace, $bundle) use ($container, $paths, $root, &$ormMappings, &$serializerMappings, &$ipLookupServices) {
     $isPlugin = $isMautic = false;
 
     if (strpos($namespace, 'MauticPlugin\\') !== false) {
-        $isPlugin = true;
+        $isPlugin   = true;
         $bundleBase = $bundle;
         $relative   = $paths['plugins'].'/'.$bundleBase;
     } elseif (strpos($namespace, 'Mautic\\') !== false) {
-        $isMautic = true;
+        $isMautic   = true;
         $bundleBase = str_replace('Mautic', '', $bundle);
-        $relative = $paths['bundles'] . '/' . $bundleBase;
+        $relative   = $paths['bundles'] . '/' . $bundleBase;
     }
 
     if ($isMautic || $isPlugin) {
         $baseNamespace = preg_replace('#\\\[^\\\]*$#', '', $namespace);
-        $directory = $paths['root'] . '/' . $relative;
+        $directory     = $paths['root'].'/'.$relative;
 
         // Check for a single config file
-        $config = (file_exists($directory . '/Config/config.php')) ? include $directory . '/Config/config.php' : array();
+        $config = (file_exists($directory.'/Config/config.php')) ? include $directory.'/Config/config.php' : array();
 
         // Services need to have percent signs escaped to prevent ParameterCircularReferenceException
         if (isset($config['services'])) {
@@ -43,33 +42,31 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
         }
 
         // Check for staticphp mapping
-        if (file_exists($directory . '/Entity')) {
-            $finder = \Symfony\Component\Finder\Finder::create()->files('*.php')
-                ->in($directory . '/Entity')
-                ->notName('*Repository.php');
+        if (file_exists($directory.'/Entity')) {
+            $finder = \Symfony\Component\Finder\Finder::create()->files('*.php')->in($directory.'/Entity')->notName('*Repository.php');
 
             foreach ($finder as $file) {
                 // Check to see if entities are organized by subfolder
                 $subFolder = $file->getRelativePath();
 
                 // Just check first file for the loadMetadata function
-                $reflectionClass = new \ReflectionClass('\\' . $baseNamespace . '\\Entity\\' . (!empty($subFolder) ? $subFolder . '\\' : '') . basename($file->getFilename(), '.php'));
+                $reflectionClass = new \ReflectionClass('\\' . $baseNamespace  . '\\Entity\\' . (!empty($subFolder) ? $subFolder . '\\': '') . basename($file->getFilename(), '.php'));
 
                 // Register API metadata
                 if ($reflectionClass->hasMethod('loadApiMetadata')) {
                     $serializerMappings[$bundle] = array(
                         'namespace_prefix' => $baseNamespace . '\\Entity',
-                        'path' => "@$bundle/Entity"
+                        'path'             => "@$bundle/Entity"
                     );
                 }
 
                 // Register entities
                 if ($reflectionClass->hasMethod('loadMetadata')) {
                     $ormMappings[$bundle] = array(
-                        'dir' => 'Entity',
-                        'type' => 'staticphp',
-                        'prefix' => $baseNamespace . '\\Entity',
-                        'mapping' => true,
+                        'dir'       => 'Entity',
+                        'type'      => 'staticphp',
+                        'prefix'    => $baseNamespace . '\\Entity',
+                        'mapping'   => true,
                         'is_bundle' => true
                     );
                 }
@@ -77,15 +74,15 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
         }
 
         return array(
-            'isPlugin' => $isPlugin,
-            'base' => str_replace('Bundle', '', $bundleBase),
-            'bundle' => $bundleBase,
-            'namespace' => $baseNamespace,
+            'isPlugin'          => $isPlugin,
+            'base'              => str_replace('Bundle', '', $bundleBase),
+            'bundle'            => $bundleBase,
+            'namespace'         => $baseNamespace,
             'symfonyBundleName' => $bundle,
-            'bundleClass' => $namespace,
-            'relative' => $relative,
-            'directory' => $directory,
-            'config' => $config
+            'bundleClass'       => $namespace,
+            'relative'          => $relative,
+            'directory'         => $directory,
+            'config'            => $config
         );
     }
 
@@ -94,9 +91,10 @@ $buildBundles = function ($namespace, $bundle) use ($container, $paths, $root, &
 
 // Separate out Mautic's bundles from other Symfony bundles
 $symfonyBundles = $container->getParameter('kernel.bundles');
-$mauticBundles = array_filter(array_map($buildBundles, $symfonyBundles, array_keys($symfonyBundles)), function ($v) {
-    return (!empty($v));
-});
+$mauticBundles  = array_filter(
+    array_map($buildBundles, $symfonyBundles, array_keys($symfonyBundles)),
+    function ($v) { return (!empty($v)); }
+);
 unset($buildBundles);
 
 // Sort Mautic's bundles into Core and Plugins
@@ -112,9 +110,7 @@ foreach ($mauticBundles as $bundle) {
 // Make Core the first in the list
 $coreBundle = $setBundles['MauticCoreBundle'];
 unset($setBundles['MauticCoreBundle']);
-$setBundles = array_merge(array(
-    'MauticCoreBundle' => $coreBundle
-), $setBundles);
+$setBundles = array_merge(array('MauticCoreBundle' => $coreBundle), $setBundles);
 
 $container->setParameter('mautic.bundles', $setBundles);
 $container->setParameter('mautic.plugin.bundles', $setPluginBundles);
@@ -128,10 +124,7 @@ $loader->import('parameters.php');
 $container->loadFromExtension('mautic_core');
 
 // Set template engines
-$engines = array(
-    'php',
-    'twig'
-);
+$engines = array('php', 'twig');
 
 // Generate session name
 if (isset($_COOKIE['mautic_session_name'])) {
@@ -139,40 +132,40 @@ if (isset($_COOKIE['mautic_session_name'])) {
     $sessionName = $_COOKIE['mautic_session_name'];
 } else {
     $key = $container->hasParameter('mautic.secret_key') ? $container->getParameter('mautic.secret_key') : uniqid();
-    $sessionName = md5(md5($paths['local_config']) . $key);
+    $sessionName = md5(md5($paths['local_config']).$key);
 }
 
 $container->loadFromExtension('framework', array(
-    'secret' => '%mautic.secret_key%',
-    'router' => array(
-        'resource' => '%kernel.root_dir%/config/routing.php',
-        'strict_requirements' => null
+    'secret'               => '%mautic.secret_key%',
+    'router'               => array(
+        'resource'            => '%kernel.root_dir%/config/routing.php',
+        'strict_requirements' => null,
     ),
-    'form' => null,
-    'csrf_protection' => true,
-    'validation' => array(
+    'form'                 => null,
+    'csrf_protection'      => true,
+    'validation'           => array(
         'enable_annotations' => false
     ),
-    'templating' => array(
+    'templating'           => array(
         'engines' => $engines,
         'form' => array(
             'resources' => array(
-                'MauticCoreBundle:FormTheme\\Custom'
-            )
-        )
+                'MauticCoreBundle:FormTheme\\Custom',
+            ),
+        ),
     ),
-    'default_locale' => '%mautic.locale%',
-    'translator' => array(
-        'enabled' => true,
+    'default_locale'       => '%mautic.locale%',
+    'translator'           => array(
+        'enabled'  => true,
         'fallback' => 'en_US'
     ),
-    'trusted_hosts' => '%mautic.trusted_hosts%',
-    'trusted_proxies' => '%mautic.trusted_proxies%',
-    'session' => array( // handler_id set to null will use default session handler from php.ini
+    'trusted_hosts'        => '%mautic.trusted_hosts%',
+    'trusted_proxies'      => '%mautic.trusted_proxies%',
+    'session'              => array( //handler_id set to null will use default session handler from php.ini
         'handler_id' => null,
-        'name' => $sessionName
+        'name'       => $sessionName,
     ),
-    'fragments' => null,
+    'fragments'            => null,
     'http_method_override' => true,
 
     /*'validation'           => array(
@@ -180,22 +173,22 @@ $container->loadFromExtension('framework', array(
     )*/
 ));
 
-// Doctrine Configuration
+//Doctrine Configuration
 $dbalSettings = array(
-    'driver' => '%mautic.db_driver%',
-    'host' => '%mautic.db_host%',
-    'port' => '%mautic.db_port%',
-    'dbname' => '%mautic.db_name%',
-    'user' => '%mautic.db_user%',
+    'driver'   => '%mautic.db_driver%',
+    'host'     => '%mautic.db_host%',
+    'port'     => '%mautic.db_port%',
+    'dbname'   => '%mautic.db_name%',
+    'user'     => '%mautic.db_user%',
     'password' => '%mautic.db_password%',
-    'charset' => 'UTF8',
-    'types' => array(
-        'array' => 'Mautic\CoreBundle\Doctrine\Type\ArrayType',
+    'charset'  => 'UTF8',
+    'types'    => array(
+        'array'    => 'Mautic\CoreBundle\Doctrine\Type\ArrayType',
         'datetime' => 'Mautic\CoreBundle\Doctrine\Type\UTCDateTimeType'
     ),
     // Prevent Doctrine from crapping out with "unsupported type" errors due to it examining all tables in the database and not just Mautic's
     'mapping_types' => array(
-        'enum' => 'string',
+        'enum'  => 'string',
         'point' => 'string',
         'bit'   => 'string',
     ),
@@ -210,107 +203,44 @@ if ($dbDriver == 'pdo_sqlite') {
 
 $container->loadFromExtension('doctrine', array(
     'dbal' => $dbalSettings,
-    'orm' => array(
+    'orm'  => array(
         'auto_generate_proxy_classes' => '%kernel.debug%',
-        'auto_mapping' => true,
-        'mappings' => $ormMappings
+        'auto_mapping'                => true,
+        'mappings'                    => $ormMappings
     )
 ));
 
-// MigrationsBundle Configuration
+//MigrationsBundle Configuration
 $prefix = $container->getParameter('mautic.db_table_prefix');
 $container->loadFromExtension('doctrine_migrations', array(
-    'dir_name' => '%kernel.root_dir%/migrations',
-    'namespace' => 'Mautic\\Migrations',
+    'dir_name'   => '%kernel.root_dir%/migrations',
+    'namespace'  => 'Mautic\\Migrations',
     'table_name' => $prefix . 'migrations',
-    'name' => 'Mautic Migrations'
+    'name'       => 'Mautic Migrations'
 ));
 
-/* */
-
 // Swiftmailer Configuration
-try {
-    $mailerSettings = array(
-        'default_mailer' => 'default',
-        'mailers' => array(
-            'default' => array(
-                'transport' => '%mautic.mailer_transport%',
-                'host' => '%mautic.mailer_host%',
-                'port' => '%mautic.mailer_port%',
-                'username' => '%mautic.mailer_user%',
-                'password' => '%mautic.mailer_password%',
-                'encryption' => '%mautic.mailer_encryption%',
-                'auth_mode' => '%mautic.mailer_auth_mode%'
-            ),
-            'mailer_reset_pass' => array(
-                'transport' => '%mautic.mailer_reset_pass_transport%',
-                'host' => '%mautic.mailer_reset_pass_host%',
-                'port' => '%mautic.mailer_reset_pass_port%',
-                'username' => '%mautic.mailer_reset_pass_user%',
-                'password' => '%mautic.mailer_reset_pass_password%',
-                'encryption' => '%mautic.mailer_reset_pass_encryption%',
-                'auth_mode' => '%mautic.mailer_reset_pass_auth_mode%'
-            )
-        )
+$mailerSettings = array(
+    'transport'  => '%mautic.mailer_transport%',
+    'host'       => '%mautic.mailer_host%',
+    'port'       => '%mautic.mailer_port%',
+    'username'   => '%mautic.mailer_user%',
+    'password'   => '%mautic.mailer_password%',
+    'encryption' => '%mautic.mailer_encryption%',
+    'auth_mode'  => '%mautic.mailer_auth_mode%'
+);
+
+// Only spool if using file as otherwise emails are not sent on redirects
+$spoolType = $container->getParameter('mautic.mailer_spool_type');
+if ($spoolType == 'file') {
+    $mailerSettings['spool'] = array(
+        'type' => '%mautic.mailer_spool_type%',
+        'path' => '%mautic.mailer_spool_path%'
     );
-
-    // Only spool if using file as otherwise emails are not sent on redirects
-    $spoolType = $container->getParameter('mautic.mailer_spool_type');
-    if ($spoolType == 'file') {
-        $mailerSettings['mailers']['default']['spool'] = array(
-            'type' => '%mautic.mailer_spool_type%',
-            'path' => '%mautic.mailer_spool_path%'
-        );
-    }
-
-    $spoolType = $container->getParameter('mautic.mailer_reset_pass_spool_type');
-    if ($spoolType == 'file') {
-        $mailerSettings['mailers']['mailer_reset_pass']['spool'] = array(
-            'type' => '%mautic.mailer_reset_pass_spool_type%',
-            'path' => '%mautic.mailer_reset_pass_spool_path%'
-        );
-    }
-
-    $resetPassUserName = $container->getParameter('mautic.mailer_reset_pass_user');
-    $resetPassUserPass = $container->getParameter('mautic.mailer_reset_pass_password');
-    $container->setDefinition('mautic.transport.resetpassword', new Definition('Mautic\EmailBundle\Swiftmailer\Transport\MailjetTransport'))
-        ->addMethodCall('setUsername', array(
-            $resetPassUserName
-    ))
-        ->addMethodCall('setPassword', array(
-        $resetPassUserPass
-    ))
-        ->addMethodCall('setMauticFactory', array(
-        new Reference('mautic.factory')
-    ));
-    $container->setAlias('swiftmailer.mailer.transport.mautic.transport.resetpassword', 'mautic.transport.resetpassword');
-
-} catch (Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException $e) {
-    $mailerSettings = array(
-        'transport' => '%mautic.mailer_transport%',
-        'host' => '%mautic.mailer_host%',
-        'port' => '%mautic.mailer_port%',
-        'username' => '%mautic.mailer_user%',
-        'password' => '%mautic.mailer_password%',
-        'encryption' => '%mautic.mailer_encryption%',
-        'auth_mode' => '%mautic.mailer_auth_mode%'
-    );
-
-    // Only spool if using file as otherwise emails are not sent on redirects
-    $spoolType = $container->getParameter('mautic.mailer_spool_type');
-    if ($spoolType == 'file') {
-        $mailerSettings['spool'] = array(
-            'type' => '%mautic.mailer_spool_type%',
-            'path' => '%mautic.mailer_spool_path%'
-        );
-    }
 }
-
 $container->loadFromExtension('swiftmailer', $mailerSettings);
 
-/* */
-
-// KnpMenu Configuration
+//KnpMenu Configuration
 $container->loadFromExtension('knp_menu', array(
     'twig' => false,
     'templating' => true,
@@ -319,11 +249,11 @@ $container->loadFromExtension('knp_menu', array(
 
 // OneupUploader Configuration
 $uploadDir = $container->getParameter('mautic.upload_dir');
-$maxSize = $container->getParameter('mautic.max_size');
+$maxSize   = $container->getParameter('mautic.max_size');
 $container->loadFromExtension('oneup_uploader', array(
     // 'orphanage' => array(
-    // 'maxage' => 86400,
-    // 'directory' => $uploadDir . '/orphanage'
+    //     'maxage' => 86400,
+    //     'directory' => $uploadDir . '/orphanage'
     // ),
     'mappings' => array(
         'asset' => array(
@@ -331,27 +261,27 @@ $container->loadFromExtension('oneup_uploader', array(
             'frontend' => 'custom',
             'custom_frontend' => array(
                 'class' => 'Mautic\AssetBundle\Controller\UploadController',
-                'name' => 'mautic'
+                'name'  => 'mautic'
             ),
             // 'max_size' => ($maxSize * 1000000),
             // 'use_orphanage' => true,
-            'storage' => array(
+            'storage'  => array(
                 'directory' => $uploadDir
             )
         )
     )
 ));
 
-// FOS Rest for API
+//FOS Rest for API
 $container->loadFromExtension('fos_rest', array(
     'routing_loader' => array(
         'default_format' => 'json',
         'include_format' => false
     ),
-    'view' => array(
+    'view'           => array(
         'formats' => array(
             'json' => true,
-            'xml' => false,
+            'xml'  => false,
             'html' => false
         ),
         'templating_formats' => array(
@@ -361,50 +291,68 @@ $container->loadFromExtension('fos_rest', array(
     'disable_csrf_role' => 'ROLE_API'
 ));
 
-// JMS Serializer for API and Webhooks
+//JMS Serializer for API and Webhooks
 $container->loadFromExtension('jms_serializer', array(
     'handlers' => array(
         'datetime' => array(
-            'default_format' => 'c',
+            'default_format'   => 'c',
             'default_timezone' => 'UTC'
         )
     ),
     'property_naming' => array(
-        'separator' => '',
+        'separator'  => '',
         'lower_case' => false
     ),
-    'metadata' => array(
-        'cache' => 'none',
+    'metadata'       => array(
+        'cache'          => 'none',
         'auto_detection' => false,
-        'directories' => $serializerMappings
+        'directories'    => $serializerMappings
     )
 ));
 
-$container->setParameter('jms_serializer.camel_case_naming_strategy.class', 'JMS\Serializer\Naming\IdenticalPropertyNamingStrategy');
+$container->setParameter(
+    'jms_serializer.camel_case_naming_strategy.class',
+    'JMS\Serializer\Naming\IdenticalPropertyNamingStrategy'
+);
 
 // Monolog formatter
-$container->register('mautic.monolog.fulltrace.formatter', 'Monolog\Formatter\LineFormatter')->addMethodCall('includeStacktraces', array(
-    true
-));
+$container->register('mautic.monolog.fulltrace.formatter', 'Monolog\Formatter\LineFormatter')
+    ->addMethodCall('includeStacktraces', array(true));
 
-// Register command line logging
-// use Symfony\Component\DependencyInjection\Definition;
-// use Symfony\Component\DependencyInjection\Reference;
+//Register command line logging
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 
-$container->setParameter('console_exception_listener.class', 'Mautic\CoreBundle\EventListener\ConsoleExceptionListener');
-$definitionConsoleExceptionListener = new Definition('%console_exception_listener.class%', array(
-    new Reference('monolog.logger.mautic')
-));
-$definitionConsoleExceptionListener->addTag('kernel.event_listener', array(
-    'event' => 'console.exception'
-));
-$container->setDefinition('mautic.kernel.listener.command_exception', $definitionConsoleExceptionListener);
+$container->setParameter(
+    'console_exception_listener.class',
+    'Mautic\CoreBundle\EventListener\ConsoleExceptionListener'
+);
+$definitionConsoleExceptionListener = new Definition(
+    '%console_exception_listener.class%',
+    array(new Reference('monolog.logger.mautic'))
+);
+$definitionConsoleExceptionListener->addTag(
+    'kernel.event_listener',
+    array('event' => 'console.exception')
+);
+$container->setDefinition(
+    'mautic.kernel.listener.command_exception',
+    $definitionConsoleExceptionListener
+);
 
-$container->setParameter('console_terminate_listener.class', 'Mautic\CoreBundle\EventListener\ConsoleTerminateListener');
-$definitionConsoleExceptionListener = new Definition('%console_terminate_listener.class%', array(
-    new Reference('monolog.logger.mautic')
-));
-$definitionConsoleExceptionListener->addTag('kernel.event_listener', array(
-    'event' => 'console.terminate'
-));
-$container->setDefinition('mautic.kernel.listener.command_terminate', $definitionConsoleExceptionListener);
+$container->setParameter(
+    'console_terminate_listener.class',
+    'Mautic\CoreBundle\EventListener\ConsoleTerminateListener'
+);
+$definitionConsoleExceptionListener = new Definition(
+    '%console_terminate_listener.class%',
+    array(new Reference('monolog.logger.mautic'))
+);
+$definitionConsoleExceptionListener->addTag(
+    'kernel.event_listener',
+    array('event' => 'console.terminate')
+);
+$container->setDefinition(
+    'mautic.kernel.listener.command_terminate',
+    $definitionConsoleExceptionListener
+);

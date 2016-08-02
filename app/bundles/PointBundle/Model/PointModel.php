@@ -43,7 +43,7 @@ class PointModel extends CommonFormModel
      * @var Session
      */
     protected $session;
-
+    
     /**
      * @var IpLookupHelper
      */
@@ -56,7 +56,7 @@ class PointModel extends CommonFormModel
 
     /**
      * PointModel constructor.
-     *
+     * 
      * @param Session $session
      * @param IpLookupHelper $ipLookupHelper
      * @param LeadModel $leadModel
@@ -191,7 +191,6 @@ class PointModel extends CommonFormModel
      */
     public function triggerAction($type, $eventDetails = null, $typeId = null, Lead $lead = null)
     {
-
         //only trigger actions for anonymous users
         if (!$this->security->isAnonymous()) {
             return;
@@ -217,6 +216,7 @@ class PointModel extends CommonFormModel
             $lead = $this->leadModel->getCurrentLead();
 
             if (null === $lead || !$lead->getId()) {
+
                 return;
             }
         }
@@ -287,7 +287,7 @@ class PointModel extends CommonFormModel
                         $delta,
                         $ipAddress
                     );
-
+                    
                     $event = new PointActionEvent($action, $lead);
                     $this->dispatcher->dispatch(PointEvents::POINT_ON_ACTION, $event);
 

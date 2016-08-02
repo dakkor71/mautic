@@ -211,7 +211,7 @@ class ConfigType extends AbstractType
                 'choices'     => array(
                     'mail'                      => 'mautic.email.config.mailer_transport.mail',
                     'mautic.transport.mandrill' => 'mautic.email.config.mailer_transport.mandrill',
-                	'mautic.transport.mailjet' => 'mautic.email.config.mailer_transport.mailjet',
+                    'mautic.transport.mailjet' => 'mautic.email.config.mailer_transport.mailjet',
                     'mautic.transport.sendgrid' => 'mautic.email.config.mailer_transport.sendgrid',
                     'mautic.transport.amazon'   => 'mautic.email.config.mailer_transport.amazon',
                     'mautic.transport.postmark' => 'mautic.email.config.mailer_transport.postmark',
@@ -322,7 +322,7 @@ class ConfigType extends AbstractType
                 "cram-md5"
             ], "config_emailconfig_mailer_transport":[
                 "mautic.transport.mandrill",
-        		"mautic.transport.mailjet",
+        	    "mautic.transport.mailjet",
                 "mautic.transport.sendgrid",
                 "mautic.transport.amazon",
                 "mautic.transport.postmark",

@@ -299,14 +299,8 @@ class CommonApiController extends FOSRestController implements MauticController
         }
         $form         = $this->createEntityForm($entity);
         $submitParams = $this->prepareParametersForBinding($parameters, $entity, $action);
-//         d($submitParams,$entity);
-//         var_dump($form);
         $form->submit($submitParams, 'PATCH' !== $method);
 
-//         die('');		
-// 		var_dump($method,$action,$form->isValid());
-// 		var_dump($form);
-// 		die('');
         if ($form->isValid()) {
             $this->preSaveEntity($entity, $form, $parameters, $action);
             $this->model->saveEntity($entity);

@@ -159,8 +159,8 @@ class SubmissionModel extends CommonFormModel
         }
 
         //clean the referer by removing mauticError and mauticMessage
-		$referer = InputHelper::url($referer, null, null, array('mauticError', 'mauticMessage'));
-		$submission->setReferer($referer);
+        $referer = InputHelper::url($referer, null, null, array('mauticError', 'mauticMessage'));
+        $submission->setReferer($referer);
 
         $fields           = $form->getFields();
         $fieldArray       = array();
@@ -180,6 +180,7 @@ class SubmissionModel extends CommonFormModel
                 'type'  => $type,
                 'alias' => $alias
             );
+
             if (in_array($type, array('button', 'freetext'))) {
                 //don't save items that don't have a value associated with it
                 continue;
@@ -224,6 +225,7 @@ class SubmissionModel extends CommonFormModel
                         $value = InputHelper::_($value, 'clean');
                     }
                 }
+
                 if (isset($params['valueConstraints']) && is_callable($params['valueConstraints'])) {
                     $customErrors = call_user_func_array($params['valueConstraints'], array($f, $value));
                     if (!empty($customErrors)) {
@@ -260,15 +262,12 @@ class SubmissionModel extends CommonFormModel
         }
 
         $submission->setResults($results);
-		
-		/** begin fix by webmecanik on 13.04.2016 **/
-		
-		//return errors
+
+
         if (!empty($validationErrors)) {
             return array('errors' => $validationErrors);
         }
-		/** end fix **/
-		
+
         //execute submit actions
         $actions = $form->getActions();
 
@@ -285,12 +284,9 @@ class SubmissionModel extends CommonFormModel
             'form'       => $form,
             'tokens'     => $tokens
         );
-		
-		
+
         foreach ($actions as $action) {
-			
             $key = $action->getType();
-			
             if (!isset($availableActions[$key])) {
                 continue;
             }
@@ -319,21 +315,14 @@ class SubmissionModel extends CommonFormModel
                         }
                     }
                     list($validated, $validatedMessage) = $reflection->invokeArgs($this, $pass);
-					
                     if (!$validated) {
-						
-						/** begin fix by webmecanik on 13.04.2016 **/
-						
-						$validationErrors = $validatedMessage;
-						// $validationErrors[$alias] = $validatedMessage;
-						
-						/** end fix **/
+                        $validationErrors = $validatedMessage;
                     }
                 }
             }
         }
-		
-		//return errors
+
+        //return errors
         if (!empty($validationErrors)) {
             return array('errors' => $validationErrors);
         }
@@ -370,9 +359,8 @@ class SubmissionModel extends CommonFormModel
                 $args['lead'] = $this->leadModel->getCurrentLead();
 
                 $callback = $settings['callback'];
-				
                 if (is_callable($callback)) {
-				    if (is_array($callback)) {
+                    if (is_array($callback)) {
                         $reflection = new \ReflectionMethod($callback[0], $callback[1]);
                     } elseif (strpos($callback, '::') !== false) {
                         $parts      = explode('::', $callback);

@@ -136,7 +136,6 @@ class CoreSubscriber extends CommonSubscriber
         }
 
         //set a couple variables used by filemanager
-        // $session->set('mautic.docroot', $this->factory->getKernel()->getRootDir().'/..'); // solution ddc si probleme sue lfile manager
         $session->set('mautic.docroot', $event->getRequest()->server->get('DOCUMENT_ROOT'));
         $session->set('mautic.basepath', $event->getRequest()->getBasePath());
         $session->set('mautic.imagepath', $this->factory->getParameter('image_path'));

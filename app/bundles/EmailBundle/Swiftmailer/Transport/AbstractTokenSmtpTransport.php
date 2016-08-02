@@ -10,7 +10,6 @@
 namespace Mautic\EmailBundle\Swiftmailer\Transport;
 
 use Mautic\EmailBundle\Swiftmailer\Message\MauticMessage;
-use Mautic\CoreBundle\Factory\MauticFactory;
 
 /**
  * Class AbstractBatchTransport

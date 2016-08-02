@@ -76,7 +76,7 @@ class UserApiController extends CommonApiController
             return $this->accessDenied();
         }
 
-        $parameters = $this->request->request->all(); // with POST method
+        $parameters = $this->request->request->all();
         if (isset($parameters['plainPassword'])) {
             $submittedPassword = $parameters['plainPassword'];
             $encoder           = $this->get('security.encoder_factory')->getEncoder($entity);

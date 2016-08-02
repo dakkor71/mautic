@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\NotAcceptableHttpException;
 
 /**
  * Mautic's Factory
- *
+ * 
  * @deprecated 2.0 to be removed in 3.0
  */
 class MauticFactory
@@ -45,7 +45,7 @@ class MauticFactory
      * @var
      */
     private $entityManager = null;
-
+    
     /**
      * @param ContainerInterface $container
      */
@@ -60,7 +60,7 @@ class MauticFactory
      * @param $modelNameKey
      *
      * @return AbstractCommonModel
-     *
+     * 
      * @throws \InvalidArgumentException
      */
     public function getModel($modelNameKey)
@@ -83,7 +83,7 @@ class MauticFactory
         if ($this->container->has($containerKey)) {
             return $this->container->get($containerKey);
         }
-
+        
         throw new \InvalidArgumentException($containerKey . ' is not a registered container key.');
     }
 

@@ -69,7 +69,7 @@ class AjaxController extends CommonAjaxController
                         "id"    => $r['id']
                     );
                 }
-            }
+            } 
             elseif ($field == "hit_url") {
                 $dataArray[] = array(
                     'value' => ''
