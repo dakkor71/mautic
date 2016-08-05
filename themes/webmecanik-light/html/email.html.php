@@ -128,152 +128,65 @@
 								<tr height="24px" style="height: 24px"><td>&nbsp;</td></tr>
 								<tr>
 									<td align="center" valign="top" style="text-align: center">
-										<center>
-											<table width="450px" border="0" cellpadding="0" cellspacing="0" style="width: 450px; mso-cellspacing: 0px; mso-padding-alt: 0px; border: 4px solid #ece9e8">
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-														<center>
-															<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
-																<tr>
-																	<td align="left" valign="top" style="text-align: left">
-																	<?php $view['slots']->output('wmk_main_section_1_title'); ?>
-																	</td>
-																</tr>
-															</table>
-														</center>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-													<?php $view['slots']->output('wmk_main_section_1_image'); ?>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-														<center>
-															<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
-																<tr>
-																	<td align="left" valign="top" style="text-align: left">
-																	<?php $view['slots']->output('wmk_main_section_1_description'); ?>
-																	</td>
-																</tr>
-															</table>
-														</center>
-													</td>
-												</tr>
-												<tr height="48px" style="height: 48px"><td>&nbsp;</td></tr>
-												<tr>
-													<td align="center" valign="top" bgcolor="#5E0A4F" style="text-align: center; background-color: #5E0A4F" class="cta_td">
-														<center>
-														<?php $view['slots']->output('wmk_main_section_1_link'); ?>
-														</center>
-													</td>
-												</tr>
-											</table>
-										</center>
-									</td>
-								</tr>
-								<tr height="36px" style="height: 36px"><td>&nbsp;</td></tr>
-								<tr>
-									<td align="center" valign="top" style="text-align: center">
-										<center>
-											<table style="width: 450px; mso-cellspacing: 2px; mso-padding-alt: 0px" border="0" cellpadding="0" cellspacing="2" width="450px">
-												<tbody>
-													<tr>
-														<td style="text-align: left; background-color: #ece9e8; width: 225px" align="left" bgcolor="#ece9e8" valign="top" width="225px">
-														<table style="width: 225px; mso-cellspacing: 15px; mso-padding-alt: 0px" border="0" cellpadding="0" cellspacing="15" width="225px">
-															<tbody>
-																<tr>
-																	<td class="grey_td" style="text-align: left; width: 225px" align="left" valign="top" width="225px">
-																	<?php $view['slots']->output('wmk_secondary_section_1_1'); ?>
-																	</td>
-																</tr>
-															</tbody>
-														</table>
-														</td>
-														<td style="text-align: left; background-color: #ece9e8; width: 225px" align="left" bgcolor="#ece9e8" valign="top" width="225px">
-														<table style="width: 225px; mso-cellspacing: 15px; mso-padding-alt: 0px" border="0" cellpadding="0" cellspacing="15" width="225px">
-															<tbody>
-																<tr>
-																	<td class="grey_td" style="text-align: left; width: 225px" align="left" valign="top" width="225px">
-																	<?php $view['slots']->output('wmk_secondary_section_1_2'); ?>
-																	</td>
-																</tr>
-															</tbody>
-														</table>
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</center>
-									</td>
-								</tr>
-								<tr height="24px" style="height: 24px"><td>&nbsp;</td></tr>
-								<tr>
-									<td align="center" valign="top" style="text-align: center">
-										<center>
-											<table width="450px" border="0" cellpadding="0" cellspacing="0" style="width: 450px; mso-cellspacing: 0px; mso-padding-alt: 0px; border: 4px solid #ece9e8">
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-														<center>
-															<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
-																<tr>
-																	<td align="left" valign="top" style="text-align: left">
-																	<?php $view['slots']->output('wmk_main_section_2_title'); ?>
-																	</td>
-																</tr>
-															</table>
-														</center>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-													<?php $view['slots']->output('wmk_main_section_2_image'); ?>
-													</td>
-												</tr>
-												<tr>
-													<td align="center" valign="top" style="text-align: center">
-														<center>
-															<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
-																<tr>
-																	<td align="left" valign="top" style="text-align: left">
-																	<?php $view['slots']->output('wmk_main_section_2_description'); ?>
-																	</td>
-																</tr>
-															</table>
-														</center>
-													</td>
-												</tr>
-												<tr height="48px" style="height: 48px"><td>&nbsp;</td></tr>
-												<tr>
-													<td align="center" valign="top" bgcolor="#5E0A4F" style="text-align: center; background-color: #5E0A4F" class="cta_td">
-														<center>
-														<?php $view['slots']->output('wmk_main_section_2_link'); ?>
-														</center>
-													</td>
-												</tr>
-											</table>
-										</center>
-									</td>
-								</tr>
-								<tr height="36px" style="height: 36px"><td>&nbsp;</td></tr>
-								<tr>
-									<td align="center" valign="top" style="text-align: center">
-										<center>
-											<table width="450px" border="0" cellpadding="0" cellspacing="2" style="width: 450px; mso-cellspacing: 2px; mso-padding-alt: 0px">
-												<tr>
-													<td align="left" valign="top" style="text-align: left; background-color: #ece9e8;" bgcolor="#ece9e8">
-														<table width="450px" border="0" cellpadding="0" cellspacing="15" style="width: 450px; mso-cellspacing: 15px; mso-padding-alt: 0px">
+										<table width="450px" border="0" cellpadding="0" cellspacing="0" style="width: 450px; mso-cellspacing: 0px; mso-padding-alt: 0px; border: 4px solid #ece9e8">
+											<tr>
+												<td align="center" valign="top" style="text-align: center">
+													<center>
+														<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
 															<tr>
-																<td align="left" valign="top" style="text-align: left" class="grey_td">
-																<?php $view['slots']->output('wmk_secondary_section_2_1'); ?>
+																<td align="left" valign="top" style="text-align: left">
+																<?php $view['slots']->output('wmk_main_section_2_title'); ?>
 																</td>
 															</tr>
 														</table>
-													</td>
-												</tr>
-											</table>
-										</center>
+													</center>
+												</td>
+											</tr>
+											<tr>
+												<td align="center" valign="top" style="text-align: center">
+												<?php $view['slots']->output('wmk_main_section_2_image'); ?>
+												</td>
+											</tr>
+											<tr>
+												<td align="center" valign="top" style="text-align: center">
+													<center>
+														<table width="430px" border="0" cellpadding="0" cellspacing="15" style="width: 430px; mso-cellspacing: 15px; mso-padding-alt: 0px">
+															<tr>
+																<td align="left" valign="top" style="text-align: left">
+																<?php $view['slots']->output('wmk_main_section_2_description'); ?>
+																</td>
+															</tr>
+														</table>
+													</center>
+												</td>
+											</tr>
+											<tr height="48px" style="height: 48px"><td>&nbsp;</td></tr>
+											<tr>
+												<td align="center" valign="top" bgcolor="#5E0A4F" style="text-align: center; background-color: #5E0A4F" class="cta_td">
+													<center>
+													<?php $view['slots']->output('wmk_main_section_2_link'); ?>
+													</center>
+												</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+								<tr height="36px" style="height: 36px"><td>&nbsp;</td></tr>
+								<tr>
+									<td align="center" valign="top" style="text-align: center">
+										<table width="450px" border="0" cellpadding="0" cellspacing="2" style="width: 450px; mso-cellspacing: 2px; mso-padding-alt: 0px">
+											<tr>
+												<td align="left" valign="top" style="text-align: left; background-color: #ece9e8;" bgcolor="#ece9e8">
+													<table width="450px" border="0" cellpadding="0" cellspacing="15" style="width: 450px; mso-cellspacing: 15px; mso-padding-alt: 0px">
+														<tr>
+															<td align="left" valign="top" style="text-align: left" class="grey_td">
+															<?php $view['slots']->output('wmk_secondary_section_2_1'); ?>
+															</td>
+														</tr>
+													</table>
+												</td>
+											</tr>
+										</table>
 									</td>
 								</tr>
 								<tr height="36px" style="height: 36px"><td>&nbsp;</td></tr>
