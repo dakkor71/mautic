@@ -8,7 +8,7 @@
  */
 
 $config = array (
-	"name" 		=> "Webmecanik",
+	"name" 		=> "Webmecanik-light",
 	"features" 	=> array (
 		"page",
 		"email",
@@ -49,12 +49,12 @@ $config = array (
 			"wmk_main_intro", 
 			"wmk_main_intro_image", 
 			"wmk_main_intro_name", 
-			"wmk_main_section_1_title", 
-			"wmk_main_section_1_image", 
-			"wmk_main_section_1_description", 
-			"wmk_main_section_1_link", 
-			"wmk_secondary_section_1_1", 
-			"wmk_secondary_section_1_2", 
+			// "wmk_main_section_1_title", 
+			// "wmk_main_section_1_image", 
+			// "wmk_main_section_1_description", 
+			// "wmk_main_section_1_link", 
+			// "wmk_secondary_section_1_1", 
+			// "wmk_secondary_section_1_2", 
 			"wmk_main_section_2_title", 
 			"wmk_main_section_2_image", 
 			"wmk_main_section_2_description", 
