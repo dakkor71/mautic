@@ -44,7 +44,14 @@
 							$copyright=$view['translator']->trans('mautic.core.copyright', array('%date%' => date('Y')));
 							$copyright=str_replace('Mautic', 'Mautic / <a href="http://www.webmecanik.com">Webmecanik</a>',$copyright);
 						?>
-						<a href="https://webmecanik.automation.webmecanik.com/mtracking.gif"></a>
+						<script>
+                            (function(w,d,t,u,n,a,m){w['MauticTrackingObject']=n;
+                                w[n]=w[n]||function(){(w[n].q=w[n].q||[]).push(arguments)},a=d.createElement(t),
+                                m=d.getElementsByTagName(t)[0];a.async=1;a.src=u;m.parentNode.insertBefore(a,m)
+                            })(window,document,'script','https://webmecanik.automation.webmecanik.com/mtc.js','mt');
+
+                            mt('send', 'pageview');
+                        </script>
                         <div class="col-xs-6 text-muted"><?php echo $copyright ?></div>  <?php // version_atmt ?>
                         <div class="col-xs-6 text-muted text-right small">v<?php echo $view['formatter']->getVersion(); ?></div>
                     </div>
