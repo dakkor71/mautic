@@ -390,18 +390,11 @@
                             window.location = response.redirect;
                         } else if (response.validationErrors) {
                             for (var field in response.validationErrors) {
-								
                                 this.markError(
-									
-									/** begin fix by webmecanik on 13.04.2016 **/
-									'mauticform_' + formId + '_' + field, 
-									// 'mauticform_' + field, 
-									/** end fix **/
-									
-									false, 
-									response.validationErrors[field]
-								);
-
+                                    'mauticform_' + formId + '_' + field, 
+                                    false, 
+                                    response.validationErrors[field]
+                                );
                             }
                         } else if (response.errorMessage) {
                             this.setMessage(response.errorMessage, 'error');

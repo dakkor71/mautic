@@ -40,11 +40,11 @@ return array(
                 'path'       => '/points/{id}',
                 'controller' => 'MauticPointBundle:Api\PointApi:getEntity'
             ),
-        	'mautic_api_applyrule'    => array(
-        			'path'       => '/points/{id}/lead/{leadId}',
-        			'controller' => 'MauticPointBundle:Api\PointApi:applyRule',
-        			'method'     => 'PATCH'
-        	),
+            'mautic_api_applyrule'    => array(
+                    'path'       => '/points/{id}/lead/{leadId}',
+                    'controller' => 'MauticPointBundle:Api\PointApi:applyRule',
+                    'method'     => 'PATCH'
+            ),
             'mautic_api_gettriggers' => array(
                 'path'       => '/points/triggers',
                 'controller' => 'MauticPointBundle:Api\TriggerApi:getEntities'
@@ -118,6 +118,27 @@ return array(
             'mautic.point.type.genericpoint_settings' => array(
                 'class' => 'Mautic\PointBundle\Form\Type\GenericPointSettingsType',
                 'alias' => 'genericpoint_settings'
+            )
+        ),
+        'models' =>  array(
+            'mautic.point.model.point' => array(
+                'class' => 'Mautic\PointBundle\Model\PointModel',
+                'arguments' => array(
+                    'session',
+                    'mautic.helper.ip_lookup',
+                    'mautic.lead.model.lead'
+                )
+            ),
+            'mautic.point.model.triggerevent' => array(
+                'class' => 'Mautic\PointBundle\Model\TriggerEventModel'
+            ),
+            'mautic.point.model.trigger' => array(
+                'class' => 'Mautic\PointBundle\Model\TriggerModel',
+                'arguments' => array(
+                    'mautic.helper.ip_lookup',
+                    'mautic.lead.model.lead',
+                    'mautic.point.model.triggerevent'
+                )
             )
         )
     )

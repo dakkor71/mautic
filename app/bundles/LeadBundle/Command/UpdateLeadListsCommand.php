@@ -19,28 +19,7 @@ class UpdateLeadListsCommand extends ModeratedCommand
     protected function configure()
     {
         $this
-            ->setName('mautic:contactsegments:update')
-            ->setAliases(
-                array(
-                    'mautic:segments:update',
-                    'mautic:update:contactsegments',
-                    'mautic:update:segments',
-                    'mautic:rebuild:contactsegments',
-                    'mautic:contactsegments:rebuild',
-                    'mautic:segments:rebuild',
-                    'mautic:rebuild:segments',
-
-                    // Following aliases: BC support; @deprecated 1.1.4; to be removed in 2.0
-                    'mautic:lists:update',
-                    'mautic:update:leadlists',
-                    'mautic:update:lists',
-                    'mautic:rebuild:leadlists',
-                    'mautic:leadlists:rebuild',
-                    'mautic:lists:rebuild',
-                    'mautic:rebuild:lists',
-                    'mautic:leadlists:update'
-                )
-            )
+            ->setName('mautic:segments:update')
             ->setDescription('Update contacts in smart segments based on new contact data.')
             ->addOption('--batch-limit', '-b', InputOption::VALUE_OPTIONAL, 'Set batch size of contacts to process per round. Defaults to 300.', 300)
             ->addOption(
@@ -72,7 +51,7 @@ class UpdateLeadListsCommand extends ModeratedCommand
 
             return 0;
         }
-		
+
         if ($id) {
             $list = $listModel->getEntity($id);
             if ($list !== null) {
@@ -90,10 +69,9 @@ class UpdateLeadListsCommand extends ModeratedCommand
                     'iterator_mode' => true
                 )
             );
-            
+
             while (($l = $lists->next()) !== false) {
                 // Get first item; using reset as the key will be the ID and not 0
-
                 $l = reset($l);
 
                 $output->writeln('<info>'.$translator->trans('mautic.lead.list.rebuild.rebuilding', array('%id%' => $l->getId())).'</info>');

@@ -27,7 +27,7 @@ class UserApiController extends CommonApiController
     public function initialize (FilterControllerEvent $event)
     {
         parent::initialize($event);
-        $this->model            = $this->factory->getModel('user.user');
+        $this->model            = $this->getModel('user.user');
         $this->entityClass      = 'Mautic\UserBundle\Entity\User';
         $this->entityNameOne    = 'user';
         $this->entityNameMulti  = 'users';
@@ -76,7 +76,7 @@ class UserApiController extends CommonApiController
             return $this->accessDenied();
         }
 
-        $parameters = $this->request->request->all(); // with POST method
+        $parameters = $this->request->request->all();
         if (isset($parameters['plainPassword'])) {
             $submittedPassword = $parameters['plainPassword'];
             $encoder           = $this->get('security.encoder_factory')->getEncoder($entity);
@@ -194,7 +194,7 @@ class UserApiController extends CommonApiController
 
         $filter = $this->request->query->get('filter', null);
         $limit  = $this->request->query->get('limit', null);
-        $roles  = $this->factory->getModel('user')->getLookupResults('role', $filter, $limit);
+        $roles  = $this->getModel('user')->getLookupResults('role', $filter, $limit);
 
         $view    = $this->view($roles, Codes::HTTP_OK);
         $context = SerializationContext::create()->setGroups(array('roleList'));

@@ -145,7 +145,7 @@ class LeadType extends AbstractType
                         'mapped'        => false,
                         'constraints'   => $constraints,
                         'precision'     => $properties['precision'],
-                        'rounding_mode' => (int) $properties['roundmode']
+                        'rounding_mode' => isset($properties['roundmode']) ? (int) $properties['roundmode'] : 0
                     )
                 );
             } elseif (in_array($type, array('date', 'datetime', 'time'))) {
@@ -306,6 +306,28 @@ class LeadType extends AbstractType
                 )
             )
             ->addModelTransformer($transformer)
+        );
+
+        $transformer = new IdToEntityModelTransformer(
+            $this->factory->getEntityManager(),
+            'MauticStageBundle:Stage'
+        );
+
+        $builder->add(
+            $builder->create(
+                'stage',
+                'stage_list',
+                array(
+                    'label'      => 'mautic.lead.lead.field.stage',
+                    'label_attr' => array('class' => 'control-label'),
+                    'attr'       => array(
+                        'class' => 'form-control'
+                    ),
+                    'required'   => false,
+                    'multiple'   => false
+                )
+            )
+                ->addModelTransformer($transformer)
         );
 
         if (!$options['isShortForm']) {
