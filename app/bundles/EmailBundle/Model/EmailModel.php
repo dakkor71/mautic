@@ -1406,7 +1406,7 @@ class EmailModel extends FormModel
                         $reason = $this->translator->trans('mautic.email.bounce.reason.'.$reason);
                     }
 
-                    $this->setDoNotContact($s, $reason, $type, ($count === $batch));
+                    $this->setDoNotContact($s, $reason, $type, true);
 
                     $s->setIsFailed(true);
                     $this->em->persist($s);
@@ -1436,7 +1436,7 @@ class EmailModel extends FormModel
                         $reason = $this->translator->trans('mautic.email.bounce.reason.'.$reason);
                     }
 
-                    $this->setEmailDoNotContact($email, $type, $reason, ($count === $batch), $leadId);
+                    $this->setEmailDoNotContact($email, $type, $reason, true, $leadId);
 
                     if ($count === $batch) {
                         $count = 0;

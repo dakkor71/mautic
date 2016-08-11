@@ -12,23 +12,23 @@ namespace Mautic\EmailBundle\Swiftmailer\Transport;
 use Mautic\CoreBundle\Factory\MauticFactory;
 
 use Symfony\Component\HttpFoundation\Request;
+use Mautic\LeadBundle\Entity\DoNotContact;
 
 /**
  * Class MailjetlTransport
  */
 class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCallbackTransport
 {
-	
+
 	/**
 	 * {@inheritdoc}
 	 */
 	public function __construct($host = 'localhost', $port = 25, $security = null)
 	{
 		parent::__construct('in-v3.mailjet.com', 587, 'tls');
-	
 		$this->setAuthMode('login');
 	}
-	
+
 
 	/**
 	 * Return the max number of to addresses allowed per batch.  If there is no limit, return 0
@@ -39,7 +39,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 		// not use with mailjet
 		return 0;
 	}
-	
+
 	/**
 	 * Get the count for the max number of recipients per batch
 	 *
@@ -53,8 +53,8 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 		// not use with mailjet
 		return 0;
 	}
-	
-	
+
+
 	/**
 	 * Do whatever is necessary to $this->message in order to deliver a batched payload. i.e. add custom headers, etc
 	 *
@@ -67,7 +67,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 			$this->message->getHeaders()->addTextHeader('X-MJ-CUSTOMID',$this->message->leadIdHash);
 		}
 	}
-	
+
     /**
      * Returns a "transport" string to match the URL path /mailer/{transport}/callback
      *
@@ -77,7 +77,7 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
     {
         return 'mailjet';
     }
-    
+
     /**
      * Handle response
      *
@@ -89,22 +89,21 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
     public function handleCallbackResponse(Request $request, MauticFactory $factory)
     {
 		$postData = json_decode($request->getContent(), true);
-// 		$this->factory->getLogger()->log('error',serialize($postData));
 	   	$rows = array (
 				'bounced' => array (
 						'hashIds' => array (),
-						'emails' => array () 
+						'emails' => array ()
 				),
 				'unsubscribed' => array (
 						'hashIds' => array (),
-						'emails' => array () 
-				) 
+						'emails' => array ()
+				)
 		);
-		
+
 		if (is_array ( $postData ) && isset ( $postData ['event'] )) {
 			// Mailjet API callback V1
 			$events = array (
-					$postData 
+					$postData
 			);
 		} elseif (is_array ( $postData )) {
 			// Mailjet API callback V2
@@ -113,25 +112,25 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 			// respone must be an array
 			return null;
 		}
-		
+
 		foreach ( $events as $event ) {
 			if (in_array ( $event ['event'], array (
 					'bounce',
 					'blocked',
 					'spam',
-					'unsub' 
+					'unsub'
 			) )) {
 				if ($event ['event'] === 'bounce' || $event ['event'] === 'blocked') {
 					$reason = $event ['error_related_to'] . ' : '. $event ['error'];
-					$type = 'bounced';
+					$type = DoNotContact::BOUNCED;
 				} elseif ($event ['event'] === 'spam') {
 					$reason = 'User reported email as spam, source :' . $event ['source'];
-					$type = 'bounced';
+					$type = DoNotContact::BOUNCED;
 				} elseif ($event ['event'] === 'unsub') {
 					$reason = 'User unsubscribed';
-					$type = 'unsubscribed';
+					$type = DoNotContact::UNSUBSCRIBED;
 				}
-				
+
 				if (isset ( $event ['CustomID'] ) && $event ['CustomID']!=='') {
 					$rows [$type] ['hashIds'] [$event ['CustomID']] = $reason;
 				} else {
@@ -141,6 +140,6 @@ class MailjetTransport extends AbstractTokenSmtpTransport implements InterfaceCa
 		}
 		return $rows;
     }
-    
-    
+
+
 }
