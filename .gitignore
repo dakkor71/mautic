@@ -40,3 +40,4 @@
 /media/dashboards/*
 !/media/dashboards/*.json
 !/media/images/automation*
+/atmt_admin/*
