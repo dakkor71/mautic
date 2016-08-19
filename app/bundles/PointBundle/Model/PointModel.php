@@ -43,7 +43,7 @@ class PointModel extends CommonFormModel
      * @var Session
      */
     protected $session;
-    
+
     /**
      * @var IpLookupHelper
      */
@@ -56,7 +56,7 @@ class PointModel extends CommonFormModel
 
     /**
      * PointModel constructor.
-     * 
+     *
      * @param Session $session
      * @param IpLookupHelper $ipLookupHelper
      * @param LeadModel $leadModel
@@ -182,11 +182,11 @@ class PointModel extends CommonFormModel
     /**
      * Triggers a specific point change
      *
-     * @param $type
+     * @param       $type
      * @param mixed $eventDetails passthrough from function triggering action to the callback function
      * @param mixed $typeId Something unique to the triggering event to prevent  unnecessary duplicate calls
      * @param Lead  $lead
-     *25
+     *
      * @return void
      */
     public function triggerAction($type, $eventDetails = null, $typeId = null, Lead $lead = null)
@@ -287,7 +287,7 @@ class PointModel extends CommonFormModel
                         $delta,
                         $ipAddress
                     );
-                    
+
                     $event = new PointActionEvent($action, $lead);
                     $this->dispatcher->dispatch(PointEvents::POINT_ON_ACTION, $event);
 

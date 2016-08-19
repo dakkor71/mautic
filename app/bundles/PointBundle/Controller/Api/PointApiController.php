@@ -9,10 +9,10 @@
 
 namespace Mautic\PointBundle\Controller\Api;
 
-use Mautic\ApiBundle\Controller\CommonApiController;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Mautic\ApiBundle\ApiEvents;
+use Mautic\ApiBundle\Controller\CommonApiController;
 use Mautic\ApiBundle\Event\ApiEvent;
+use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 /**
@@ -24,7 +24,7 @@ class PointApiController extends CommonApiController
     /**
      * {@inheritdoc}
      */
-    public function initialize (FilterControllerEvent $event)
+    public function initialize(FilterControllerEvent $event)
     {
         parent::initialize($event);
         $this->model            = $this->getModel('point');
@@ -34,26 +34,30 @@ class PointApiController extends CommonApiController
         $this->permissionBase   = 'point:points';
         $this->serializerGroups = array('pointDetails', 'categoryList', 'publishDetails');
     }
-    
+
     /**
-     * 
      * @param unknown $id
      * @param unknown $leadId
-     * 
+     *
      * @return
      */
-    public function applyRuleAction ($id, $leadId) {	
-    	
-    	if (empty($id) || empty($leadId)) {
-    		return new JsonResponse(array("message" => "Vous devez avoir un id de règle de points et un id de lead", "success" => false));
-    	}
-    	   	
-    	$lead = $this->factory->getModel('lead')->getEntity($leadId);
- 
-    	$event = new ApiEvent($lead, $id);
-    	
-    	$this->factory->getDispatcher()->dispatch(ApiEvents::API_CALL_APPLYRULE, $event);
-    	
-    	return new JsonResponse(array("success" => true));
+    public function applyRuleAction($id, $leadId)
+    {
+        if (empty($id) || empty($leadId)) {
+            return new JsonResponse(array(
+                "message" => "A points rule ID and contact ID are required",
+                "success" => false
+            ));
+        }
+
+        $lead = $this->factory->getModel('lead')->getEntity($leadId);
+
+        $event = new ApiEvent($lead, $id);
+
+        $this->factory->getDispatcher()->dispatch(ApiEvents::API_CALL_APPLYRULE, $event);
+
+        return new JsonResponse(array(
+            "success" => true
+        ));
     }
 }

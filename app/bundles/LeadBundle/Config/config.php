@@ -51,6 +51,13 @@ return [
                     'leadId' => '\d+'
                 ]
             ],
+            'mautic_contacttimeline_action'       => [
+                'path'         => '/contacts/timeline/{leadId}/{page}',
+                'controller'   => 'MauticLeadBundle:Timeline:index',
+                'requirements' => [
+                    'leadId' => '\d+'
+                ]
+            ],
             'mautic_contact_action'           => [
                 'path'       => '/contacts/{objectAction}/{objectId}',
                 'controller' => 'MauticLeadBundle:Lead:execute'
@@ -105,24 +112,20 @@ return [
                 'path'       => '/contacts/list/fields',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:getFields'
             ],
-        	'mautic_api_editpointslead' => [
-        		'path' => '/leads/{id}/setpoints/{points}',
-        		'controller' => 'MauticLeadBundle:Api\LeadApi:setPoints',
-        		'method'     => 'PATCH'
-        	],
-        	'mautic_api_addpointslead' => [
-        			'path' => '/leads/{id}/addpoints/{points}',
-        			'controller' => 'MauticLeadBundle:Api\LeadApi:addPoints',
-        			'method' => 'PATCH'
-        	],
-        	'mautic_api_subtractpointslead' => [
-        			'path' => '/leads/{id}/subtractpoints/{points}',
-        			'controller' => 'MauticLeadBundle:Api\LeadApi:subtractPoints',
-        			'method'     => 'PATCH'
-        	],
-            'mautic_api_getleadlists'      => [
-                'path'       => '/contacts/list/segments',
-                'controller' => 'MauticLeadBundle:Api\ListApi:getLists'
+            'mautic_api_editcontactpoints'    => [
+                'path'       => '/contacts/{id}/setpoints/{points}',
+                'controller' => 'MauticLeadBundle:Api\LeadApi:setPoints',
+                'method'     => 'PATCH'
+            ],
+            'mautic_api_addcontactpoints'     => [
+                'path'       => '/contacts/{id}/addpoints/{points}',
+                'controller' => 'MauticLeadBundle:Api\LeadApi:addPoints',
+                'method'     => 'PATCH'
+            ],
+            'mautic_api_subtractleadpoints'   => [
+                'path'       => '/contacts/{id}/subtractpoints/{points}',
+                'controller' => 'MauticLeadBundle:Api\LeadApi:subtractPoints',
+                'method'     => 'PATCH'
             ],
             'mautic_api_getcontactsegments'      => [
                 'path'       => '/contacts/list/segments',
@@ -405,7 +408,7 @@ return [
             ],
             'mautic.lead.model.note' => [
                 'class' => 'Mautic\LeadBundle\Model\NoteModel'
-            ],
+            ]
         ]
     ]
 ];

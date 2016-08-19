@@ -12,12 +12,13 @@ namespace Mautic\LeadBundle\Controller\Api;
 use FOS\RestBundle\Util\Codes;
 use JMS\Serializer\SerializationContext;
 use Mautic\ApiBundle\Controller\CommonApiController;
+use Mautic\CoreBundle\Entity\IpAddress;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\LeadBundle\Entity\Lead;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 use Mautic\LeadBundle\Entity\PointsChangeLog;
-use Mautic\CoreBundle\Entity\IpAddress;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+
 
 /**
  * Class LeadApiController
@@ -318,28 +319,32 @@ class LeadApiController extends CommonApiController
      * @param int $points
      *
      * @return
+     *
      */
-    public function setPointsAction($id, $points) {
-    	$parameters = $this->request->request->all();
+    public function setPointsAction($id, $points)
+    {
+        $parameters = $this->request->request->all();
 
-    	// recover lead
-    	$lead = $this->model->getEntity($id);
-    	if (!$lead instanceof $this->entityClass) {
-    		return $this->notFound();
-    	}
-    	if (!$this->checkEntityAccess($lead, 'edit')) {
-    		return $this->accessDenied();
-    	}
+        // recover lead
+        $lead = $this->model->getEntity($id);
+        if (!$lead instanceof $this->entityClass) {
+            return $this->notFound();
+        }
+        if (!$this->checkEntityAccess($lead, 'edit')) {
+            return $this->accessDenied();
+        }
 
-    	// change the numbre of points
-    	$lead->setPoints($points);
+        // change the numbre of points
+        $lead->setPoints($points);
 
-		$this->historyEventsPointsApi($lead, $points, $parameters);
+        $this->historyEventsPointsApi($lead, $points, $parameters);
 
-    	// sauv bdd
-    	$this->model->saveEntity($lead, false);
+        // sauv bdd
+        $this->model->saveEntity($lead, false);
 
-    	return new JsonResponse(array("success" => true));
+        return new JsonResponse(array(
+            "success" => true
+        ));
     }
 
     /**
@@ -349,32 +354,36 @@ class LeadApiController extends CommonApiController
      * @param int $points
      *
      * @return
+     *
      */
-    public function addPointsAction($id, $points) {
-   		$parameters = $this->request->request->all();
+    public function addPointsAction($id, $points)
+    {
+        $parameters = $this->request->request->all();
 
-    	// recover lead
-    	$lead = $this->model->getEntity($id);
-    	if (!$lead instanceof $this->entityClass) {
-    		return $this->notFound();
-    	}
-    	if (!$this->checkEntityAccess($lead, 'edit')) {
-    		return $this->accessDenied();
-    	}
+        // recover lead
+        $lead = $this->model->getEntity($id);
+        if (!$lead instanceof $this->entityClass) {
+            return $this->notFound();
+        }
+        if (!$this->checkEntityAccess($lead, 'edit')) {
+            return $this->accessDenied();
+        }
 
-    	// collect the points
-    	$pointslead = $lead->getPoints();
-    	$totalPoints = $pointslead + $points;
+        // collect the points
+        $pointslead = $lead->getPoints();
+        $totalPoints = $pointslead + $points;
 
-		$this->historyEventsPointsApi($lead, +$points,  $parameters);
+        $this->historyEventsPointsApi($lead, +$points, $parameters);
 
-    	// change the numbre of points
-    	$lead->setPoints($totalPoints);
+        // change the numbre of points
+        $lead->setPoints($totalPoints);
 
-    	// sauv bdd
-    	$this->model->saveEntity($lead, false);
+        // sauv bdd
+        $this->model->saveEntity($lead, false);
 
-    	return new JsonResponse(array("success" => true));
+        return new JsonResponse(array(
+            "success" => true
+        ));
     }
 
     /**
@@ -384,61 +393,64 @@ class LeadApiController extends CommonApiController
      * @param int $points
      *
      * @return
-     */
-    public function subtractPointsAction($id, $points) {
-    	$parameters = $this->request->request->all();
-
-    	// recover lead
-    	$lead = $this->model->getEntity($id);
-    	if (!$lead instanceof $this->entityClass) {
-    		return $this->notFound();
-    	}
-    	if (!$this->checkEntityAccess($lead, 'edit')) {
-    		return $this->accessDenied();
-    	}
-
-    	// collect the points
-    	$pointslead = $lead->getPoints();
-    	$totalPoints = $pointslead - $points;
-
-		$this->historyEventsPointsApi($lead, -$points, $parameters);
-
-    	// change the numbre of points
-    	$lead->setPoints($totalPoints);
-
-    	// sauv bdd
-    	$this->model->saveEntity($lead, false);
-
-    	return new JsonResponse(array("success" => true));
-    }
-
-    /**
      *
      */
-    protected function historyEventsPointsApi ($lead, $points, $parameters) {
-    	$eventName = (array_key_exists ('eventname', $parameters)) ? $parameters['eventname'] : null;
-    	$actionName = (array_key_exists ('actionname', $parameters)) ? $parameters['actionname'] : null;
+    public function subtractPointsAction($id, $points)
+    {
+        $parameters = $this->request->request->all();
 
-    	$en = $this->factory->getTranslator()->trans('mautic.lead.report.points.action_name');
-    	$an = $this->factory->getTranslator()->trans('mautic.lead.event.api');
+        // recover lead
+        $lead = $this->model->getEntity($id);
+        if (!$lead instanceof $this->entityClass) {
+            return $this->notFound();
+        }
+        if (!$this->checkEntityAccess($lead, 'edit')) {
+            return $this->accessDenied();
+        }
 
-    	$eventName = ($eventName === null)? $en : $eventName;
-    	$actionName = ($actionName === null)? $an : $actionName;
+        // collect the points
+        $pointslead = $lead->getPoints();
+        $totalPoints = $pointslead - $points;
 
-    	$ip = new IpAddress();
-    	$ip->setIpAddress($this->request->server->get('SERVER_ADDR'));
+        $this->historyEventsPointsApi($lead, -$points, $parameters);
 
-    	$event = new PointsChangeLog();
-    	$event->setType('API');
-    	$event->setEventName($eventName);
-    	$event->setActionName($actionName);
-    	$event->setIpAddress($ip);
-    	$event->setDateAdded(new \DateTime());
-    	$event->setDelta($points);
-    	$event->setLead($lead);
+        // change the numbre of points
+        $lead->setPoints($totalPoints);
 
-    	$lead->addPointsChangeLog($event);
+        // sauv bdd
+        $this->model->saveEntity($lead, false);
+
+        return new JsonResponse(array(
+            "success" => true
+        ));
     }
+
+    protected function historyEventsPointsApi($lead, $points, $parameters)
+    {
+        $eventName = (array_key_exists('eventname', $parameters)) ? $parameters['eventname'] : null;
+        $actionName = (array_key_exists('actionname', $parameters)) ? $parameters['actionname'] : null;
+
+        $en = $this->factory->getTranslator()->trans('mautic.lead.report.points.action_name');
+        $an = $this->factory->getTranslator()->trans('mautic.lead.event.api');
+
+        $eventName = ($eventName === null) ? $en : $eventName;
+        $actionName = ($actionName === null) ? $an : $actionName;
+
+        $ip = new IpAddress();
+        $ip->setIpAddress($this->request->server->get('SERVER_ADDR'));
+
+        $event = new PointsChangeLog();
+        $event->setType('API');
+        $event->setEventName($eventName);
+        $event->setActionName($actionName);
+        $event->setIpAddress($ip);
+        $event->setDateAdded(new \DateTime());
+        $event->setDelta($points);
+        $event->setLead($lead);
+
+        $lead->addPointsChangeLog($event);
+    }
+
 
     /**
      * {@inheritdoc}
