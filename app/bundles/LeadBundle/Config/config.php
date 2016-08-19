@@ -122,7 +122,7 @@ return [
                 'controller' => 'MauticLeadBundle:Api\LeadApi:addPoints',
                 'method'     => 'PATCH'
             ],
-            'mautic_api_subtractleadpoints'   => [
+            'mautic_api_subtractcontactpoints'   => [
                 'path'       => '/contacts/{id}/subtractpoints/{points}',
                 'controller' => 'MauticLeadBundle:Api\LeadApi:subtractPoints',
                 'method'     => 'PATCH'
