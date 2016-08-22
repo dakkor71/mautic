@@ -18,6 +18,7 @@ use Mautic\LeadBundle\Entity\ListLead;
 use Mautic\LeadBundle\Event\FilterChoiceEvent;
 use Mautic\LeadBundle\Event\LeadListEvent;
 use Mautic\LeadBundle\Event\ListChangeEvent;
+use Mautic\LeadBundle\Event\LeadListFiltersChoicesEvent;
 use Mautic\LeadBundle\LeadEvents;
 use Mautic\CoreBundle\Helper\Chart\LineChart;
 use Mautic\CoreBundle\Helper\Chart\BarChart;
@@ -218,7 +219,9 @@ class ListModel extends FormModel
      */
     public function getFilterExpressionFunctions()
     {
-        return $this->em->getRepository('MauticLeadBundle:LeadList')->getFilterExpressionFunctions();
+		$repo = $this->em->getRepository('MauticLeadBundle:LeadList');
+		$repo->setFactory($this->factory);
+		return $repo->getFilterExpressionFunctions();
     }
 
     /**

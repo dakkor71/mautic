@@ -21,6 +21,7 @@ use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\CoreBundle\Helper\InputHelper;
 use Mautic\LeadBundle\Entity\DoNotContact;
+use Mautic\LeadBundle\LeadEvents;
 
 /**
  * LeadListRepository
@@ -688,7 +689,7 @@ class LeadListRepository extends CommonRepository
                         $key = $string;
                         $isRelative = true;
                     }
-                    
+
                     if ($isRelative) {
                         if ($requiresBetween) {
                             $startWith = ($isTimestamp) ? $dtHelper->toUtcString('Y-m-d H:i:s') : $dtHelper->toUtcString('Y-m-d');
@@ -1105,6 +1106,14 @@ class LeadListRepository extends CommonRepository
                     'negate_expr' => 'in'
                 ),
         );
+
+		// Add custom filters operators
+		$dispatcher = $this->factory->getDispatcher();
+		if ($dispatcher->hasListeners(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE)) {
+			$event = new LeadListFiltersOperatorsEvent($operatorOptions, $this->factory->getTranslator());
+			$dispatcher->dispatch(LeadEvents::LIST_FILTERS_OPERATORS_ON_GENERATE, $event);
+			$operatorOptions = $event->getOperators();
+		}
 
         return ($operator === null) ? $operatorOptions : $operatorOptions[$operator];
     }
