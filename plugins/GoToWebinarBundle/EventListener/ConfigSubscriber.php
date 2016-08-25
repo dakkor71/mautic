@@ -32,7 +32,7 @@ class ConfigSubscriber extends CommonSubscriber
 				'bundle' => 'GoToWebinarBundle',
                 'formAlias'  => 'gotowebinar_formtype_config',
                 'formTheme'  => 'GoToWebinarBundle:Config',
-                'parameters' => $event->getParameters('/config/local.php')
+                'parameters' => $event->getParametersFromConfig('GoToWebinarBundle')
             )
         );
 	}

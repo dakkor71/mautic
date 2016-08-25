@@ -9,6 +9,7 @@
 namespace MauticPlugin\GoToWebinarBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Mautic\CoreBundle\Doctrine\Mapping\ClassMetadataBuilder;
 
 /**
  *
@@ -54,6 +55,26 @@ class WebinarEvent
 		$this->webinarSlug = "undefined";
 		$this->eventDatetime = new \Datetime;
 		$this->eventType = "undefined";
+	}
+
+	/**
+	 * @param ORM\ClassMetadata $metadata
+	 */
+	public static function loadMetadata(ORM\ClassMetadata $metadata)
+	{
+	    $builder = new ClassMetadataBuilder($metadata);
+
+	    $builder->setTable('plugin_gotowebinar_events');
+
+	    $builder->addId();
+	    $builder->addNamedField('email', 'string', 'email');
+	    $builder->addNamedField('webinarSlug', 'string', 'webinar_slug');
+	    $builder->addNamedField('eventDatetime', 'datetime', 'event_datetime');
+
+	    $field = $builder->createField('eventType', 'string')
+	    ->columnName('event_type')
+	    ->length(31)
+	    ->build();
 	}
 
 	/**

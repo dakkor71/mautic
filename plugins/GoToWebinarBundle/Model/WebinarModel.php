@@ -11,6 +11,7 @@ namespace MauticPlugin\GoToWebinarBundle\Model;
 use Mautic\CoreBundle\Factory\MauticFactory;
 use MauticPlugin\GoToWebinarBundle\Entity\WebinarEvent;
 use Mautic\CoreBundle\Model\FormModel;
+use Doctrine\DBAL\Schema\Table;
 
 
 /**
@@ -193,19 +194,28 @@ class WebinarModel extends FormModel
      */
 	private function _createTableIfNotExists()
 	{
-		// Récupération du nom de la table associée à l'entité
-		$tableName = $this->em->getClassMetadata('GoToWebinarBundle:WebinarEvent')->getTableName();
+		$tableName = 'plugin_gotowebinar_events';
 
 		// Vérification de son existence en DB
 		$schemaManager = $this->em->getConnection()->getSchemaManager();
+
 		if ( !$schemaManager->tablesExist(array($tableName)) == true) {
 
-			// Si elle n'existe pas, déclenche une mise à jour du schéma Doctrine via la console
-			$kernel = $this->factory->getKernel();
-			$application = new \Symfony\Bundle\FrameworkBundle\Console\Application($kernel);
-			$application->setAutoExit(false);
-			$options = array('command' => 'doctrine:schema:update',"--force" => true);
-			$application->run(new \Symfony\Component\Console\Input\ArrayInput($options));
+		    $table = new Table($tableName);
+
+		    $table->addColumn('id', 'integer', array(
+		        'Autoincrement' => true
+		    ));
+		    $table->addUniqueIndex(array(
+		        'id'
+		    ));
+		    $table->addColumn('email', 'string');
+		    $table->addColumn('webinar_slug', 'string');
+		    $table->addColumn('event_datetime', 'datetime');
+		    $table->addColumn('event_type', 'string');
+
+		    $schemaManager->createTable($table);
+
 		}
 	}
 
