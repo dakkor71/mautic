@@ -15,9 +15,7 @@
 
     <div class="col-xs-8">
         <h3>
-            <?php echo $bundle->getDescription(); ?>
+            <?php echo $view["translator"]->trans( $bundle->getDescription() ); ?>
         </h3>
     </div>
 </div>
-
-

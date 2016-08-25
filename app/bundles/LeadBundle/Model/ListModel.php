@@ -62,6 +62,8 @@ class ListModel extends FormModel
         /** @var \Mautic\LeadBundle\Entity\LeadListRepository $repo */
         $repo = $this->em->getRepository('MauticLeadBundle:LeadList');
 
+		$repo->setFactory($this->factory);
+
         $repo->setTranslator($this->translator);
 
         return $repo;
@@ -392,6 +394,13 @@ class ListModel extends FormModel
                 )
             )
         );
+
+		// Add custom choices
+		if ($this->dispatcher->hasListeners(LeadEvents::LIST_FILTERS_CHOICES_ON_GENERATE)) {
+			$event = new LeadListFiltersChoicesEvent($choices, $operators, $this->translator, $this->factory);
+			$this->dispatcher->dispatch(LeadEvents::LIST_FILTERS_CHOICES_ON_GENERATE, $event);
+			$choices = $event->getChoices();
+		}
 
         //get list of custom fields
         $fields = $this->em->getRepository('MauticLeadBundle:LeadField')->getEntities(
