@@ -29,7 +29,7 @@ class WebinarModel extends FormModel
 	{
 		$this->setFactory($factory);
 		$this->setEntityManager($factory->getEntityManager());
-// 		$this->_createTableIfNotExists();
+		$this->_createTableIfNotExists();
 
 		$this->webinarEventRepo = $this->em->getRepository('GoToWebinarBundle:WebinarEvent');
 	}
@@ -199,7 +199,7 @@ class WebinarModel extends FormModel
 		// Vérification de son existence en DB
 		$schemaManager = $this->em->getConnection()->getSchemaManager();
 
-		if ( !$schemaManager->tablesExist(array($tableName)) == true) {
+		if ( !$schemaManager->tablesExist(array($tableName)) === true) {
 
 		    $table = new Table($tableName);
 
