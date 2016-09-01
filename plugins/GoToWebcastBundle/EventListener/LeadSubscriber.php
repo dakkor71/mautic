@@ -79,7 +79,7 @@ class LeadSubscriber extends CommonSubscriber
 		}
 
 		// Recherche des événements liés aux webcasts
-		$webcastModel = $this->factory->getModel('plugin.GoToWebcast.Webcast');
+		$webcastModel = $this->factory->getModel('gotowebcast.webcast');
 		$webcastEvents = $webcastModel->getEventsByLeadEmail($leadEmail);
 
 		// Ajout de chaque événement à la timeline
@@ -130,7 +130,7 @@ class LeadSubscriber extends CommonSubscriber
 		}
 
 		// Liste des webcasts connus de ATMT ?
-		$webcastModel = $event->getFactory()->getModel('plugin.GoToWebcast.Webcast');
+		$webcastModel = $event->getFactory()->getModel('gotowebcast.webcast');
 		$webcastSlugs = $webcastModel->getDistinctWebcastSlugs();
 		$webcastSlugs = array_combine($webcastSlugs, $webcastSlugs);
 
@@ -198,7 +198,7 @@ class LeadSubscriber extends CommonSubscriber
 		if ( !$this->isPluginEnabled) {
 			return;
 		}
-		
+
 		$details = $event->getDetails();
 		$leadId = $event->getLeadId();
 		$em = $event->getEntityManager();

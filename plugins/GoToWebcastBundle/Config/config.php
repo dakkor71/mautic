@@ -60,7 +60,12 @@ return array(
 				'arguments' => array('translator', 'mautic.factory')
 			)
 		),
-
+	    'models' =>  [
+	        'mautic.gotowebcast.model.webcast' => [
+	            'class' => 'MauticPlugin\GoToWebcastBundle\Model\WebcastModel',
+	            'arguments' => ['mautic.factory']
+	        ]
+	    ],
 		'others' => array(
 			'mautic.helper.gotowebcast.formaction' => array(
 				'class' => 'MauticPlugin\GoToWebcastBundle\Helper\FormActionHelper',
