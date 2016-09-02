@@ -14,6 +14,7 @@ use Mautic\LeadBundle\Event\LeadListFiltersChoicesEvent;
 use Mautic\LeadBundle\Event\LeadListFiltersOperatorsEvent;
 use Mautic\LeadBundle\Event\LeadListFilteringEvent;
 use Mautic\LeadBundle\LeadEvents;
+use Mautic\CoreBundle\Factory\MauticFactory;
 
 /**
  * Class LeadSubscriber
@@ -27,8 +28,9 @@ class LeadSubscriber extends CommonSubscriber
 	/**
 	 * Injection de dépendances
 	 */
-	public function __construct($isPluginEnabled)
+	public function __construct(MauticFactory $factory, $isPluginEnabled)
 	{
+	    parent::__construct($factory);
 		$this->isPluginEnabled = $isPluginEnabled;
 	}
 

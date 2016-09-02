@@ -11,6 +11,7 @@ namespace MauticPlugin\GoToWebcastBundle\EventListener;
 use Mautic\CampaignBundle\CampaignEvents;
 use Mautic\CampaignBundle\Event\CampaignBuilderEvent;
 use Mautic\CoreBundle\EventListener\CommonSubscriber;
+use Mautic\CoreBundle\Factory\MauticFactory;
 
 /**
  * Class CampaignSubscriber
@@ -22,8 +23,9 @@ class CampaignSubscriber extends CommonSubscriber
 	/**
 	 * Injection de dépendances
 	 */
-	public function __construct($isPluginEnabled)
+	public function __construct(MauticFactory $factory, $isPluginEnabled)
 	{
+	    parent::__construct($factory);
 		$this->isPluginEnabled = $isPluginEnabled;
 	}
 

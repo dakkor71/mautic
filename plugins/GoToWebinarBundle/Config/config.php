@@ -41,11 +41,11 @@ return array(
 			),
 			'plugin.gotowebinar.lead.subscriber' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\LeadSubscriber',
-				'arguments' => array('%mautic.gotowebinar_enable_plugin%')
+				'arguments' => array( 'mautic.factory', '%mautic.gotowebinar_enable_plugin%')
 			),
 			'plugin.gotowebinar.campaignevent.subscriber' => array(
 				'class' => 'MauticPlugin\GoToWebinarBundle\EventListener\CampaignSubscriber',
-				'arguments' => array('%mautic.gotowebinar_enable_plugin%')
+				'arguments' => array( 'mautic.factory' , '%mautic.gotowebinar_enable_plugin%')
 			)
 		),
 

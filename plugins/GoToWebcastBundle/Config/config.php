@@ -33,11 +33,11 @@ return array(
 			),
 			'plugin.gotowebcast.lead.subscriber' => array(
 				'class' => 'MauticPlugin\GoToWebcastBundle\EventListener\LeadSubscriber',
-				'arguments' => array('%mautic.gotowebcast_enable_plugin%')
+				'arguments' => array('mautic.factory','%mautic.gotowebcast_enable_plugin%')
 			),
 			'plugin.gotowebcast.campaignevent.subscriber' => array(
 				'class' => 'MauticPlugin\GoToWebcastBundle\EventListener\CampaignSubscriber',
-				'arguments' => array('%mautic.gotowebcast_enable_plugin%')
+				'arguments' => array('mautic.factory','%mautic.gotowebcast_enable_plugin%')
 			)
 		),
 
