@@ -239,7 +239,7 @@ class WebinarModel extends FormModel
 			$leadModel->setCurrentLead($lead);
 
 			// ... nécessaire pour tester le déclenchement des triggers custom
-			$this->factory->getModel('campaign')->triggerEvent('gotowebinar.decision');
+			$this->factory->getModel('campaign.event')->triggerEvent('gotowebinar.decision');
 		}
 	}
 }
