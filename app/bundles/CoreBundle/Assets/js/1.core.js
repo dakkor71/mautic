@@ -601,7 +601,8 @@ var Mautic = {
                         // Set custom buttons with separator between them.
                         toolbarButtons: maxButtons,
                         toolbarButtonsMD: maxButtons,
-                        heightMin: 300
+                        heightMin: 300,
+                        shortcutsEnabled: []
                     };
 
                     if (textarea.hasClass('editor-basic-fullpage')) {
