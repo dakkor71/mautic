@@ -123,7 +123,9 @@ class InesApi extends CrmApi
 			try {
 				$this->syncLeadToInes($lead);
 			}
-			catch (\Exception $e) {}
+			catch (\Exception $e) {
+				$this->integration->logIntegrationError($e);
+			}
 		}
 	}
 
