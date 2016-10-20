@@ -57,9 +57,9 @@ class InesApi extends CrmApi
 		foreach(array(
 			'LastName' => "Nom",
 			'FirstName' => "Prénom",
-			'BussinesTelephone' => "Téléphone bureau",
-			'HomeTelephone' => "Téléphone domicile",
-			'MobilePhone' => "Téléphone mobile",
+			'BussinesTelephone' => "Téléphone bureau (contact)",
+			'HomeTelephone' => "Téléphone domicile (contact)",
+			'MobilePhone' => "Téléphone mobile (contact)",
 			'Fax' => "Fax (contact)",
 			'BusinessAddress' => "Adresse bureau (contact)",
 			'HomeAddress' => "Adresse domicile (contact)",
