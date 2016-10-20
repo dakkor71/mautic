@@ -47,8 +47,8 @@ Paramètres : aucun
 En sortie :
 
 array(
-	'mapping' => array(
 	
+	'mapping' => array(
 		0 => _config_champ_1_,
 		
 		1 => _config_champ_2_,
@@ -56,7 +56,6 @@ array(
 		1 => _config_champ_3_,
 		
 		...
-		
 	)
 )
 
