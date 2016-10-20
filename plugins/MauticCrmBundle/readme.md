@@ -47,7 +47,6 @@ Paramètres : aucun
 En sortie :
 
 array(
-
 	'mapping' => array(
 	
 		0 => _config_champ_1_,
@@ -59,14 +58,12 @@ array(
 		...
 		
 	)
-	
 )
 
 
 Où _config_champ_x_ a la structure suivante :
 
 array(
-
 	'concept' => 'contact' | 'client',
 	
 	'inesFieldKey' => 'PrimaryMailAddress',
@@ -76,7 +73,6 @@ array(
 	'atmtFieldKey' => 'email',
 	
 	'isEcrasable' => 0 | 1
-	
 )
 
 
