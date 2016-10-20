@@ -60,6 +60,13 @@ class InesApi extends CrmApi
 			'BussinesTelephone' => "Téléphone bureau",
 			'HomeTelephone' => "Téléphone domicile",
 			'MobilePhone' => "Téléphone mobile",
+			'Fax' => "Fax (contact)",
+			'BusinessAddress' => "Adresse bureau (contact)",
+			'HomeAddress' => "Adresse domicile (contact)",
+			'Country' => "Pays (contact)",
+			'State' => "Région (contact)",
+			'City' => "Ville (contact)",
+			'ZipCode' => "Code postal (contact)",
 			'Function' => "Fonction",
 			'Service' => "Service",
 			'DateOfBirth' => "Date de naissance",
@@ -71,13 +78,14 @@ class InesApi extends CrmApi
 
 		// 3 : les champs de société standards
 		foreach(array(
-			'Address1' => "Adresse ligne 1",
-			'Address2' => "Adresse ligne 2",
-			'ZipCode' => "Code postal",
-			'City' => "Ville",
-			'State' => "Région",
-			'Country' => "Pays",
-			'Fax' => "Fax",
+			'Address1' => "Adresse ligne 1 (société)",
+			'Address2' => "Adresse ligne 2 (société)",
+			'ZipCode' => "Code postal (société)",
+			'City' => "Ville (société)",
+			'State' => "Région (société)",
+			'Country' => "Pays (société)",
+			'Phone' => "Téléphone (société)",
+			'Fax' => "Fax (société)",
 			'Website' => "Site internet"
 		) as $inesKey => $inesLabel) {
 			$defaultInesFields[] = array('client', $inesKey, $inesLabel, false, false, false, false);
