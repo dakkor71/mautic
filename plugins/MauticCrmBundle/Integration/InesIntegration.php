@@ -140,29 +140,34 @@ class InesIntegration extends CrmAbstractIntegration
 
 
 			// Liste des champs disponibles chez INES et disponibles pour l'option "champ écrasable"
-			$inesFields = $this->getApiHelper()->getLeadFields();
-			$choices = array();
-			foreach($inesFields as $field) {
-				if ($field['excludeFromEcrasableConfig']) {
-					continue;
-				}
-				$key = $field['concept'].'_'.$field['inesKey'];
-				$choices[$key] = $field['inesLabel'];
-			}
+			try {
+				if ($this->isAuthorized()) {
+					$inesFields = $this->getApiHelper()->getLeadFields();
+					$choices = array();
+					foreach($inesFields as $field) {
+						if ($field['excludeFromEcrasableConfig']) {
+							continue;
+						}
+						$key = $field['concept'].'_'.$field['inesKey'];
+						$choices[$key] = $field['inesLabel'];
+					}
 
-			$builder->add(
-				'not_ecrasable_fields',
-				'choice',
-				array(
-					'choices'     => $choices,
-					'expanded'    => true,
-					'multiple'    => true,
-					'label'       => 'mautic.ines.form.protected.fields',
-					'label_attr'  => ['class' => ''],
-					'empty_value' => false,
-					'required'    => false
-				)
-			);
+					$builder->add(
+						'not_ecrasable_fields',
+						'choice',
+						array(
+							'choices'     => $choices,
+							'expanded'    => true,
+							'multiple'    => true,
+							'label'       => 'mautic.ines.form.protected.fields',
+							'label_attr'  => ['class' => ''],
+							'empty_value' => false,
+							'required'    => false
+						)
+					);
+				}
+			}
+			catch (\Exception $e) {}
 		}
 	}
 
