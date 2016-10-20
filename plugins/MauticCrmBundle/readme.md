@@ -41,35 +41,48 @@ Dans INES CRM, le client /contact a du être mis à jour, en respectant les éve
 ##Lecture des champs mappés via l'API Automation (réservé aux développeurs)
 
 EndPoint : GET /api/ines/getMapping
+
 Paramètres : aucun
 
 En sortie :
-array(
+
+```
+array(	
 	'mapping' => array(
-		0 => _config_champ_1_,
+		0 => _config_champ_1_,	
 		1 => _config_champ_2_,
 		1 => _config_champ_3_,
 		...
 	)
 )
+```
 
 Où _config_champ_x_ a la structure suivante :
+
+```
 array(
-	'concept' => 'contact' | 'client',
+	'concept' => 'contact' | 'client',	
 	'inesFieldKey' => 'PrimaryMailAddress',
 	'isCustomField' => 0 | 1,
 	'atmtFieldKey' => 'email',
 	'isEcrasable' => 0 | 1
 )
+```
 
 L'attribut 'concept' indique si le champ en question est lié à un contact ou à une société.
+
 L'attribut 'inesFieldKey' correspond au nom interne du champ côté INES, tel qu'il est nommé dans les balises XML des WS.
+
 L'attribut 'isCustomField' indique s'il s'agit d'un champ personnalisé (au sens INES du terme) ou non.
+
 L'attribut 'atmtFieldKey' correspond au nom interne dans Automation du champ mappé.
-L'attribut 'isEcrasable' indique si les valeurs présentes dans INES peuvent être écrasées par une valeur Automation différente ou non. Il est donné à titre indicatif car c'est Automation qui s'occupe du filtrage lors des mises à jour des contacts et clients chez INES.
+
+L'attribut 'isEcrasable' indique si les valeurs présentes dans INES peuvent être écrasées par une valeur Automation différente ou non. 
+Il est donné à titre indicatif car c'est Automation qui s'occupe du filtrage lors des mises à jour des contacts et clients chez INES.
 
 
 Notes :
 
 - Les champs non mappés se sont pas retournés. L'attribut 'atmtFieldKey' est donc toujours renseigné.
+
 - Deux champs sont toujours présents dans la réponse et ont pour attribut 'inesFieldKey' les valeurs 'InternalContactRef' et 'InternalCompanyRef'. Ils indiquent les champs Automation utilisés pour stocker les InternalRef des contacts et des clients.
