@@ -1,13 +1,15 @@
 <?php
-/**
- * @package     Mautic
- * @copyright   2014 Mautic Contributors. All rights reserved.
+
+/*
+ * @copyright   2014 Mautic Contributors. All rights reserved
  * @author      Mautic
+ *
  * @link        http://mautic.org
+ *
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-return array(
+return [
     'name'        => 'CRM',
     'description' => 'Enables integration with Mautic supported CRMs.',
     'version'     => '1.0',
@@ -15,6 +17,7 @@ return array(
 
 	'routes' => [
 
+		/** Page : journal de bord de la synchro avec INES CRM **/
 		'main' => [
 			'ines_logs' => [
 				'path' => '/ines/logs',
@@ -22,7 +25,7 @@ return array(
 			]
 		],
 
-		/** Ajout d'un End-Point dans l'API Mautic pour rÃ©cupÃ©rer le mapping et la config du plugin INES **/
+		/** Ajout d'un End-Point dans l'API Mautic pour récupérer le mapping et la config du plugin INES **/
 		'api' => [
 			'plugin_crm_bundle_ines_get_mapping_api' => [
 				'path' => '/ines/getMapping',
@@ -47,5 +50,4 @@ return array(
             ]
 		]
 	]
-
-);
+];
