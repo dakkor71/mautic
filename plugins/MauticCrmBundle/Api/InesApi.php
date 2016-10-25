@@ -9,7 +9,7 @@ namespace MauticPlugin\MauticCrmBundle\Api;
 
 use Mautic\PluginBundle\Exception\ApiErrorException;
 use Mautic\EmailBundle\Helper\MailHelper;
-use Mautic\LeadBundle\Entity\lead;
+use Mautic\LeadBundle\Entity\Lead;
 
 /**
  * Class InesApi
@@ -130,6 +130,10 @@ class InesApi extends CrmApi
 
 			try {
 				$this->syncLeadToInes($lead);
+
+				// Si un lead est synchronisé par une action directe "push contact to integaration",
+				// on le retire d'une éventuelle file d'attente, dédiée aux synchro asynchrones via un CRONJOB
+				$this->integaration->dequeuePendingLead($lead->getId());
 			}
 			catch (\Exception $e) {
 				$this->integration->logIntegrationError($e);
@@ -140,6 +144,7 @@ class InesApi extends CrmApi
 
 	/**
 	 * Pousse n'importe quel lead, passé en paramètre, vers INES CRM
+	 * Optimisé pour enchaîner les appels si nécessaire
 	 *
 	 * @param 	Mautic\LeadBundle\Entity\Lead	$lead
 	 *
@@ -308,11 +313,12 @@ class InesApi extends CrmApi
 			}
 		}
 
-
 		// Traitement des custom fields INES, s'il y en a
 		/*
 		TODO
 		*/
+
+		return true;
 	}
 
 
@@ -362,7 +368,28 @@ class InesApi extends CrmApi
 	}
 
 
+	/**
+	 * Recherche, à partir du mapping des champs, les champs Automation qui correspondent à une liste de champs INES
+	 *
+	 * @param 	array 	$inesFieldsKeys
+	 *
+	 * @return 	array 	Liste des identifiants des champs ATMT trouvés
+	 */
+	public function getAtmtFieldsKeysFromInesFieldsKeys($inesFieldsKeys)
+	{
+		$atmtFields = array();
 
+		$mapping = $this->integration->getMapping();
+		foreach($mapping as $mappingItem) {
+
+			$inesFieldKey = $mappingItem['inesFieldKey'];
+
+			if (in_array($inesFieldKey, $inesFieldsKeys)) {
+				$atmtFields[$inesFieldKey] = $mappingItem['atmtFieldKey'];
+			}
+		}
+		return $atmtFields;
+	}
 
 
 

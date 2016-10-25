@@ -13,24 +13,39 @@ return array(
     'version'     => '1.0',
     'author'      => 'Mautic',
 
-	'routes' => array(
+	'routes' => [
 
-		/** Pour le debug : à supprimer
-		'main' => array(
-			'ines_logs' => array(
+		'main' => [
+			'ines_logs' => [
 				'path' => '/ines/logs',
-				'controller' => 'MauticCrmBundle:Test:logs'
-			)
-		),
-		*/
+				'controller' => 'MauticCrmBundle:Ines:logs'
+			]
+		],
 
 		/** Ajout d'un End-Point dans l'API Mautic pour récupérer le mapping et la config du plugin INES **/
-		'api' => array(
-			'plugin_crm_bundle_ines_get_mapping_api' => array(
+		'api' => [
+			'plugin_crm_bundle_ines_get_mapping_api' => [
 				'path' => '/ines/getMapping',
 				'controller' => 'MauticCrmBundle:Api:inesGetMapping',
 				'method' => 'GET'
-			)
-		)
-	)
+			]
+		],
+	],
+
+	'services' => [
+
+		'events' => [
+            'mautic.crm.leadbundle.subscriber' => [
+                'class' => 'MauticPlugin\MauticCrmBundle\EventListener\LeadSubscriber'
+            ]
+		],
+
+		'models' =>  [
+            'mautic.crm.model.ines_sync_log' => [
+                'class' => 'MauticPlugin\MauticCrmBundle\Model\InesSyncLogModel',
+				'arguments' => ['mautic.factory']
+            ]
+		]
+	]
+
 );

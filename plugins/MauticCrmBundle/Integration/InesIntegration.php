@@ -7,7 +7,7 @@
 
 namespace MauticPlugin\MauticCrmBundle\Integration;
 
-use Mautic\LeadBundle\Entity\lead;
+use Mautic\LeadBundle\Entity\Lead;
 
 /**
  * Class InesIntegration
@@ -33,13 +33,14 @@ class InesIntegration extends CrmAbstractIntegration
 
 
 	/**
-	 * Description de l'intégration, affichée en tête de l'onglet de config
+	 * Message affiché en tête de l'onglet de config
 	 *
 	 * @return string
 	 */
 	public function getDescription()
 	{
-		return $this->getTranslator()->trans('mautic.ines.description');
+		$message = $this->getTranslator()->trans('mautic.ines.description');
+		return $message;
 	}
 
 
@@ -138,6 +139,17 @@ class InesIntegration extends CrmAbstractIntegration
                 ]
             );
 
+			// Bouton : afficher le journal de bord
+			$logsUrl = $this->factory->getRouter()->generate('ines_logs');
+			$builder->add('goto_logs_button', 'standalone_button', array(
+				'label' => 'mautic.ines.form.gotologs.btn',
+				'attr'     => array(
+                    'class'   => 'btn',
+                    'onclick' => "window.open('$logsUrl')",
+                ),
+				'required' => false
+			));
+
 
 			// Liste des champs disponibles chez INES et disponibles pour l'option "champ écrasable"
 			try {
@@ -185,6 +197,26 @@ class InesIntegration extends CrmAbstractIntegration
 
 		$sessionID = $this->getWebServiceCurrentSessionID();
 		return $sessionID ? true : $this->checkAuth();
+	}
+
+
+	/**
+	 * Indique si le mode synchro complète est coché ou non dans la config du plugin
+	 *
+	 * @return bool
+	 */
+	public function isFullSync()
+	{
+		$settings = $this->getIntegrationSettings();
+
+		// Si l'intégration est désactivée, on ne doit rien synchroniser
+		if ( $settings->getIsPublished() === false) {
+			return false;
+		}
+
+		$featureSettings = $settings->getFeatureSettings();
+		$isFullSync = (isset($featureSettings['full_sync']) && count($featureSettings['full_sync']) === 1);
+		return $isFullSync;
 	}
 
 
@@ -441,6 +473,120 @@ class InesIntegration extends CrmAbstractIntegration
 		}
 
 		return $response;
+	}
+
+
+	/**
+	 * Ajout d'un lead à la file d'attente des leads à synchroniser, s'il n'y est pas déjà
+	 *
+	 * @param 	Mautic\LeadBundle\Entity\Lead	$lead
+	 * @param 	string 							$action 	'UPDATE' | 'DELETE'
+	 */
+	public function enqueueLead(Lead $lead, $action = 'UPDATE')
+	{
+		// Le lead ne doit pas être anonyme
+		if ( !empty($lead->getEmail()) && !empty($lead->getCompany()) ) {
+
+			// L'intégration doit être en mode 'full sync'
+			if ($this->isFullSync()) {
+
+				// Si le lead existe déjà en file d'attente, on le supprime
+				// Permet d'éviter les mises à jour multiple.
+				// Et considère la dernière action comme prioritaire sur les autres.
+				$this->dequeuePendingLead($lead->getId());
+
+				// Ajout d'une entrée dans la table "ines_sync_log"
+
+				$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
+				$entity = $inesSyncLogModel->getEntity();
+
+				$entity->setAction($action)
+					   ->setLeadId( $lead->getId() )
+					   ->setLeadEmail( $lead->getEmail() )
+					   ->setLeadCompany( $lead->getCompany() );
+
+				$inesSyncLogModel->saveEntity($entity);
+			}
+		}
+	}
+
+
+	/**
+	 * Retire un lead de la file d'attente des leads à synchroniser
+	 *
+	 * @param 	int		$leadId
+	 */
+	public function dequeuePendingLead($leadId)
+	{
+		$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
+		$inesSyncLogModel->removeEntitiesBy(
+			array(
+				'leadId' => $leadId,
+				'status' => 'PENDING'
+			)
+		);
+	}
+
+
+	/**
+	 * Synchronise un lot de leads présents en file d'attente
+	 *
+	 * @param 	int 	$numberToProcess
+	 */
+	public function syncPendingLeadsToInes($numberToProcess)
+	{
+		$updatedCounter = 0;
+		$failedUpdatedCounter = 0;
+		$deletedCounter = 0;
+		$failedDeletedCounter = 0;
+		$apiHelper = $this->getApiHelper();
+		$leadModel = $this->factory->getModel('lead.lead');
+
+		// ETAPE 1 : UPDATE lot de leads à SYNCHRONISER
+		$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
+		$pendingItems = $inesSyncLogModel->getPendingEntities('UPDATE', $numberToProcess);
+
+		foreach($pendingItems as $item) {
+
+			// Lead courant ?
+			$leadId = $item->getLeadId();
+			$lead = $leadModel->getEntity($leadId);
+
+ 			// S'il est trouvé, synchronisation
+			if ($lead->getId() == $leadId) {
+
+				$syncOk = $apiHelper->syncLeadToInes($lead);
+
+				$itemCounter = $item->getCounter();
+
+				// Synchronisation OK
+				if ($syncOk) {
+					$updatedCounter++;
+					$itemStatus = 'DONE';
+					$itemCounter++;
+				}
+				// Synchronisation ECHOUÉE
+				else {
+					$failedUpdatedCounter++;
+					$itemCounter++;
+					if ($itemCounter == 3) {
+						$itemStatus = 'FAILED';
+					}
+				}
+
+				// Mise à jour de l'enregistrement en DB
+				$item->setCounter($itemCounter);
+				$item->setStatus($itemStatus);
+				$inesSyncLogModel->saveEntity($item);
+			}
+		}
+
+		// ETAPE 2 : DELETE : lot de leads à SUPPRIMER
+		$pendingDeletingItems = $inesSyncLogModel->getPendingEntities('DELETE', $numberToProcess);
+		$failedDeletedCounter = count($pendingDeletingItems);
+		/* TODO */
+
+		return array($updatedCounter, $failedUpdatedCounter, $deletedCounter, $failedDeletedCounter);
 	}
 
 
