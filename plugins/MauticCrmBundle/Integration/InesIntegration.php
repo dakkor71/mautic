@@ -484,8 +484,11 @@ class InesIntegration extends CrmAbstractIntegration
 	 */
 	public function enqueueLead(Lead $lead, $action = 'UPDATE')
 	{
+		$leadId = $lead->getId();
+		$company = $this->getLeadMainCompany($leadId);
+
 		// Le lead ne doit pas être anonyme
-		if ( !empty($lead->getEmail()) && !empty($lead->getCompany()) ) {
+		if ( !empty($lead->getEmail()) && !empty($company) ) {
 
 			// L'intégration doit être en mode 'full sync'
 			if ($this->isFullSync()) {
@@ -500,10 +503,12 @@ class InesIntegration extends CrmAbstractIntegration
 				$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
 				$entity = $inesSyncLogModel->getEntity();
 
+				$company = $this->getLeadMainCompany($lead->getId());
+
 				$entity->setAction($action)
 					   ->setLeadId( $lead->getId() )
 					   ->setLeadEmail( $lead->getEmail() )
-					   ->setLeadCompany( $lead->getCompany() );
+					   ->setLeadCompany($company);
 
 				$inesSyncLogModel->saveEntity($entity);
 			}
@@ -564,6 +569,10 @@ class InesIntegration extends CrmAbstractIntegration
 					$updatedCounter++;
 					$itemStatus = 'DONE';
 					$itemCounter++;
+
+					// Dans le cas de la synchro d'un nouveau lead, l'écriture des clés INES contact et client dans le lead
+					// déclenchent un ajout intempestif du lead à la file d'attente. D'où ce nettoyage :
+					$this->dequeuePendingLead($lead->getId());
 				}
 				// Synchronisation ECHOUÉE
 				else {
@@ -587,6 +596,25 @@ class InesIntegration extends CrmAbstractIntegration
 		/* TODO */
 
 		return array($updatedCounter, $failedUpdatedCounter, $deletedCounter, $failedDeletedCounter);
+	}
+
+
+	/**
+	 * Retourne le nom de la société principale (= 1ère de la liste) liée à un contact
+	 * Ou une chaîne vide si n'existe pas
+	 *
+	 * @param 	int 	$leadId
+	 *
+	 * @return 	string
+	 */
+	public function getLeadMainCompany($leadId)
+	{
+		$companyLeadRepo = $this->factory->getModel('lead.company')->getCompanyLeadRepository();
+		$companies = $companyLeadRepo->getCompaniesByLeadId($leadId);
+
+		$companyName = isset($companies[0]) ? $companies[0]['companyname'] : '';
+
+		return $companyName;
 	}
 
 

@@ -125,8 +125,11 @@ class InesApi extends CrmApi
 	 */
 	public function createLead($mappedData, Lead $lead)
 	{
+		$leadId = $lead->getId();
+		$company = $this->integration->getLeadMainCompany($leadId);
+
 		// Un lead n'est synchronisé que s'il possède au minimum un email et une société
-		if ( !empty($lead->getEmail()) && !empty($lead->getCompany())) {
+		if ( !empty($lead->getEmail()) && !empty($company)) {
 
 			try {
 				$this->syncLeadToInes($lead);
@@ -163,6 +166,9 @@ class InesApi extends CrmApi
 			}
 		}
 
+		// Cas particulier de la société
+		$company = $this->integration->getLeadMainCompany($lead->getId());
+
 		// Application du mapping au lead courant
 		// En dissociant les informations du contact et de la société (= client)
 		// ainsi que les champs standards et custom (chez INES)
@@ -185,9 +191,14 @@ class InesApi extends CrmApi
 
 			// Valeur du lead pour le champ courant
 			// Si non définie, on ne la mémorise pas dans les données mappées
-			$leadValue = $fieldsValues[ $mappingItem['atmtFieldKey'] ];
-			if ($leadValue == null) {
-				continue;
+			if ($mappingItem['atmtFieldKey'] != 'company') {
+				$leadValue = $fieldsValues[ $mappingItem['atmtFieldKey'] ];
+				if ($leadValue == null) {
+					continue;
+				}
+			}
+			else {
+				$leadValue = $company;
 			}
 
 			// Clé du champ chez INES
