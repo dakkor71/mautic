@@ -8,7 +8,7 @@ Ils peuvent être nommés librement (par exemple "ID contact INES" et "ID client
 
 2. Dans le menu settings / plugins, si l'icone "INES" n'est pas présent, cliquer sur "Install / Upgrade Plugins".
 Cliquer sur l'icone INES et configurer l'intégration à l'aide de vos codes d'accès au CRM : Compte, Utilisateur, Mot de passe.
-Puis testez la connexion.
+Puis tester la connexion.
 
 3. Lorsque la connexion est OK, enregistrer la configuration, la fermer puis l'ouvrir à nouveau.
 L'onglet "Contact Field Mapping" doit être présent.
@@ -17,11 +17,21 @@ Puis affecter parmis les autres champs proposés ceux qui doivent être synchron
 A noter que certains champs sont présents en doubles (par exemple l'adresse) car ils peuvent être synchronisés soit avec un contact INES, soit avec un client INES.
 
 4. Dans l'onglet "Features" :
-- L'option "Push contacts to this integration" active la fonction du même nom présente dans les actions de formulaire ou les campagnes.
-- L'option "Synchronisation de tous les leads" permet d'injecter dans INES CRM tous les contacts ayant au minimum un email et une société. Pour fonctionner, elle nécessite la mise en place d'une tâche planifiée (CRON) sur le serveur : EN COURS DE DEVELOPPEMENT.
-- Les champs cochés en dernière partie de l'onglet "features" deviennent non écrasables : la valeur de ces champs dans Automation n'affecte le champ correspondant dans INES CRM que s'il n'est pas encore renseigné.
+L'option "Push contacts to this integration" active la fonction du même nom présente dans les actions de formulaire ou les campagnes.
 
-5. Dans l'onglet "Enable/Auth", mettre le commutateur "Published" sur "ON".
+5. Dans l'onglet "Features" :
+L'option "Synchronisation de tous les leads" permet d'injecter dans INES CRM tous les contacts ayant au minimum un email et une société. Pour fonctionner, elle nécessite la mise en place d'une tâche planifiée (CRONJOB) sur le serveur : 
+php app/console crm:ines [--number-of-leads-to-process=]
+Le paramètre number-of-leads-to-process indique le nombre maximum de leads à synchroniser à chaque appel.
+
+6. Dans l'onglet "Features" :
+Le bouton "Voir journal de bord" affiche la file d'attente, limitée à 200 lignes, des dernières synchronisations planifiées, réussies ou échouées. Cette file d'attente n'est utilisée que par le mode "full-sync" du plugin.
+En cas d'erreur lors de la synchro d'un lead, le script ré-essayera une synchro au prochain appel. Au bout de 3 tentatives infructueuses, la ligne passe en 'FAILED' et est ignorée pour les prochaines synchro.
+
+7. Dans l'onglet "Features" :
+Les champs cochés en dernière partie de l'onglet "features" deviennent non écrasables : la valeur de ces champs dans Automation n'affecte le champ correspondant dans INES CRM que s'il n'est pas encore renseigné.
+
+8. Dans l'onglet "Enable/Auth", mettre le commutateur "Published" sur "ON".
 
 
 ##Test minimaliste
@@ -36,6 +46,9 @@ Dans Automation, le lead doit avoir reçu un ID de contact et un ID de société
 
 3. Depuis le même formulaire, envoyer un deuxième test avec le même email et la même société, mais en modifiant l'un des autres champs.
 Dans INES CRM, le client /contact a du être mis à jour, en respectant les éventuels champs non-écrasables.
+
+4. En mode full-sync, modifier ou supprimer manuellement des leads, puis vérifier qu'ils apparaissent bien dans la file d'attente.
+Lancer la ligne de commande "php app/console crm:ines" puis rafraichir le journal de bord et s'assurer du changement d'état des leads en attente.
 
 
 ##Lecture des champs mappés via l'API Automation (réservé aux développeurs)
