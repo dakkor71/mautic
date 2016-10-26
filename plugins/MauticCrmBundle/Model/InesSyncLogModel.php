@@ -107,6 +107,21 @@ class InesSyncLogModel extends FormModel
 
 
 	/**
+	 * Vérifie si la file d'attente est vide
+	 *
+	 * @param 	$action 	string 	'UPDATE' | 'DELETE'
+	 *
+	 * @return 	bool
+	 */
+	public function havePendingEntities($action)
+	{
+		return empty(
+			$this->getPendingEntities($action, 1)
+		);
+	}
+
+	
+	/**
 	 * Retourne l'historique de la file d'attente, par date de mise à jour décroissante
 	 *
 	 * @param 	$limit 		int

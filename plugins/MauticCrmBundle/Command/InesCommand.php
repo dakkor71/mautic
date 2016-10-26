@@ -60,6 +60,7 @@ class InesCommand extends ContainerAwareCommand
 			return 0;
 		}
 
+
 		// Les WS fonctionnent : on peut lancer la synchro
 		list($nbUpdated, $nbFailedUpdated, $nbDeleted, $nbFailedDeleted) = $inesIntegration->syncPendingLeadsToInes($numberToProcess);
 
@@ -68,6 +69,12 @@ class InesCommand extends ContainerAwareCommand
 
 		$s = ($nbDeleted > 1) ? 's' : '';
 		$output->writeln($nbDeleted.' lead'.$s.' supprimés'.$s.' sur un total de '.($nbDeleted + $nbFailedDeleted).'.');
+
+
+		// Si la file d'attente est vide, on tente de l'alimenter avec un lot de leads qui n'ont jamais été synchronisés
+		$nbEnqueued = $inesIntegration->firstSyncCheckAndEnqueue();
+		$s = ($nbEnqueued > 1) ? 's' : '';
+		$output->writeln($nbEnqueued.' lead'.$s." ajouté".$s." à la file d'attente (1ère synchro)");
 
 		return 1;
     }

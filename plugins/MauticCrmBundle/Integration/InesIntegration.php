@@ -481,6 +481,8 @@ class InesIntegration extends CrmAbstractIntegration
 	 *
 	 * @param 	Mautic\LeadBundle\Entity\Lead	$lead
 	 * @param 	string 							$action 	'UPDATE' | 'DELETE'
+	 *
+	 * @return 	bool
 	 */
 	public function enqueueLead(Lead $lead, $action = 'UPDATE')
 	{
@@ -511,8 +513,11 @@ class InesIntegration extends CrmAbstractIntegration
 					   ->setLeadCompany($company);
 
 				$inesSyncLogModel->saveEntity($entity);
+
+				return true;
 			}
 		}
+		return false;
 	}
 
 
@@ -530,6 +535,61 @@ class InesIntegration extends CrmAbstractIntegration
 				'status' => 'PENDING'
 			)
 		);
+	}
+
+
+	/**
+	 * Ajoute dans la file d'attente un lot de leads qui n'ont jamais été synchronisés,
+	 * à condition que la file d'attente soit vide.
+	 * Permet de gérer automatiquement et progressivement la 1ère synchro lors de la mise en service du mode full-sync
+	 *
+	 * @param 	$limit 	Nombre maximum de leads à ajouter à la file d'attente
+	 *
+	 * @return 	$enqueuedCounter 	Nombre de leads ajoutés à la file d'attente
+	 */
+	public function firstSyncCheckAndEnqueue($limit = 100)
+	{
+		$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
+		$leadModel = $this->factory->getModel('lead.lead');
+
+		// Si la file d'attente n'est pas vide, on ne fait rien
+		if ( !$inesSyncLogModel->havePendingEntities('UPDATE')) {
+			return 0;
+		}
+
+		// Recherche des leads ayant une société ET un email ET les clés INES non renseignées
+		$items = $this->factory->getEntityManager()
+			 ->getConnection()
+			 ->createQueryBuilder()
+			 ->select('DISTINCT(l.id)')
+			 ->from(MAUTIC_TABLE_PREFIX.'companies_leads', 'cl')
+			 ->innerJoin('cl', MAUTIC_TABLE_PREFIX.'leads', 'l', 'l.id = cl.lead_id')
+			 ->where(
+			 	'l.email <> "" AND ('.
+				 	'l.inescontactid IS NULL OR '.
+					'l.inescontactid <= 0 OR '.
+					'l.inesclientid IS NULL OR '.
+					'l.inesclientid <= 0'.
+				')'
+			 )
+			 ->setFirstResult(0)
+			 ->setMaxResults($limit)
+			 ->execute()
+			 ->fetchAll();
+
+		// Ajout des leads trouvés à la file d'attente
+		$enqueuedCounter = 0;
+		if ($items) {
+			foreach($items as $item) {
+				$leadId = $item['id'];
+				$lead = $leadModel->getEntity($leadId);
+				if ($this->enqueueLead($lead)) {
+					$enqueuedCounter++;
+				}
+			}
+		}
+
+		return $enqueuedCounter;
 	}
 
 

@@ -24,6 +24,7 @@ class LeadSubscriber extends CommonSubscriber
     {
         return array(
             LeadEvents::LEAD_POST_SAVE  => array('onLeadPostSave', 0),
+			LeadEvents::LEAD_COMPANY_CHANGE  => array('onLeadCompanyChange', 0),
             LeadEvents::LEAD_PRE_DELETE  => array('onLeadPreDelete', 0)
         );
     }
@@ -37,6 +38,17 @@ class LeadSubscriber extends CommonSubscriber
      */
     public function onLeadPostSave(Events\LeadEvent $event)
     {
+		$lead = $event->getLead();
+		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
+		$inesIntegration->enqueueLead($lead);
+	}
+
+
+	/**
+	 * Idem lors du changement de la société d'un lead
+	 */
+	public function onLeadCompanyChange(Events\LeadCompanyChange $event)
+	{
 		$lead = $event->getLead();
 		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
 		$inesIntegration->enqueueLead($lead);

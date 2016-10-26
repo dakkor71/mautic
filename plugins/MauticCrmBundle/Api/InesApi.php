@@ -128,6 +128,7 @@ class InesApi extends CrmApi
 		$leadId = $lead->getId();
 		$company = $this->integration->getLeadMainCompany($leadId);
 
+
 		// Un lead n'est synchronisé que s'il possède au minimum un email et une société
 		if ( !empty($lead->getEmail()) && !empty($company)) {
 
@@ -136,7 +137,7 @@ class InesApi extends CrmApi
 
 				// Si un lead est synchronisé par une action directe "push contact to integaration",
 				// on le retire d'une éventuelle file d'attente, dédiée aux synchro asynchrones via un CRONJOB
-				$this->integaration->dequeuePendingLead($lead->getId());
+				$this->integration->dequeuePendingLead($lead->getId());
 			}
 			catch (\Exception $e) {
 				$this->integration->logIntegrationError($e);
