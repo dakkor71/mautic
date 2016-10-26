@@ -17,6 +17,46 @@ use Mautic\LeadBundle\Entity\Lead;
 class InesApi extends CrmApi
 {
 
+
+	public function testAddLead()
+	{
+		/*
+		Pour tester, mettre ceci dans le controlleur LOG :
+
+		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
+		$inesIntegration->getApiHelper()->testAddLead();
+		*/
+
+		$response = $this->request('ws/wsics.asmx', 'AddLead', array(
+			'info' => array(
+				'ClRef' => 1650,
+				'CtRef' => 544,
+				'DescriptionCourte' => "Création du lead depuis Automation",
+				'FileRef' => 0,
+				'CriticiteRef' => 0,
+				'TypeRef' => 0,
+				'EtatRef' => 0,
+				'OrigineRef' => 0,
+				'DossierRef' => 0,
+				'CampagneRef' => 0,
+				'ArticleRef' => 0,
+				'ReclaMere' => 0,
+				'Propietaire' => 0,
+				'Gestionnaire' => 0
+			)
+		), true);
+
+		// Réponse du WS : "Recla file not found"
+		// Question : comment tenir compte du canal de lead ?
+		var_dump($response);
+		die();
+	}
+
+
+
+
+
+
 	/**
 	 * Force la suppression / mise à jour de l'ID de session du web-service
 	 * Utilisé par le bouton "Tester la connexion" de l'onglet de config
@@ -390,8 +430,8 @@ class InesApi extends CrmApi
 	public function getAtmtFieldsKeysFromInesFieldsKeys($inesFieldsKeys)
 	{
 		$atmtFields = array();
-
 		$mapping = $this->integration->getMapping();
+
 		foreach($mapping as $mappingItem) {
 
 			$inesFieldKey = $mappingItem['inesFieldKey'];
@@ -450,6 +490,7 @@ class InesApi extends CrmApi
 	protected function getInesSyncConfig()
 	{
 		$syncConfig = $this->integration->getCurrentSyncConfig();
+
 		if ( !$syncConfig) {
 
 			// Appel du WS

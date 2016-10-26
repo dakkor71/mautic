@@ -557,6 +557,18 @@ class InesIntegration extends CrmAbstractIntegration
 			return 0;
 		}
 
+		// Recherche des clés ATMT contenant les clés INES de contact et client
+		$atmtFieldsKeys = $this->getApiHelper()->getAtmtFieldsKeysFromInesFieldsKeys(
+			['InternalContactRef', 'InternalCompanyRef']
+		);
+		if (isset($atmtFieldsKeys['InternalContactRef']) && isset($atmtFieldsKeys['InternalCompanyRef'])) {
+			$inesContactAtmtKey = $atmtFieldsKeys['InternalContactRef'];
+			$inesClientAtmtKey = $atmtFieldsKeys['InternalCompanyRef'];
+		}
+		else {
+			return 0;
+		}
+
 		// Recherche des leads ayant une société ET un email ET les clés INES non renseignées
 		$items = $this->factory->getEntityManager()
 			 ->getConnection()
@@ -566,10 +578,12 @@ class InesIntegration extends CrmAbstractIntegration
 			 ->innerJoin('cl', MAUTIC_TABLE_PREFIX.'leads', 'l', 'l.id = cl.lead_id')
 			 ->where(
 			 	'l.email <> "" AND ('.
-				 	'l.inescontactid IS NULL OR '.
-					'l.inescontactid <= 0 OR '.
-					'l.inesclientid IS NULL OR '.
-					'l.inesclientid <= 0'.
+				 	'l.'.$inesContactAtmtKey.' IS NULL OR '.
+					'l.'.$inesContactAtmtKey.' <= 0 OR '.
+					'l.'.$inesContactAtmtKey.' LIKE "" OR '.
+					'l.'.$inesClientAtmtKey.' IS NULL OR '.
+					'l.'.$inesClientAtmtKey.' <= 0 OR '.
+					'l.'.$inesClientAtmtKey.' LIKE "" '.
 				')'
 			 )
 			 ->setFirstResult(0)
