@@ -34,6 +34,12 @@ Les champs cochés en dernière partie de l'onglet "features" deviennent non éc
 8. Dans l'onglet "Enable/Auth", mettre le commutateur "Published" sur "ON".
 
 
+##Synchro initiale
+
+Lorsque le mode "Synchro complète" est actif, le cronjob se charge de vérifier, à chaque fois que la file d'attente est vide, s'il existe des leads dans ATMT qui n'ont jamais été synchronisés, et en ajoute une partie (les 100 premiers rencontrés) à la file d'attente.
+Ce qui permet de ne pas se soucier de la synchro initiale, qui se fait automatiquement et progressivement, à partir du moment où le cronjob est en place.
+
+
 ##Test minimaliste
 
 1. Dans Automation, créer un formulaire de type "Standalone".
