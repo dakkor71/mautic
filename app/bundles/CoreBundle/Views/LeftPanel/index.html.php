@@ -11,7 +11,7 @@
 $extraMenu = $view['menu']->render('extra');
 ?>
 <!-- start: sidebar-header -->
-<div class="sidebar-header">
+<div class="sidebar-header" style="background-color:#E40050"> <?php // version_atmt?>
     <!-- brand -->
     <a class="mautic-brand" href="#" style="background-color:#E40050">  <?php // version_atmt?>
         <!-- logo figure -->

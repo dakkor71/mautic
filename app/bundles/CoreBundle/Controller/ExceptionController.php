@@ -11,6 +11,7 @@
 
 namespace Mautic\CoreBundle\Controller;
 
+use Mautic\CoreBundle\Helper\InputHelper;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -164,5 +165,92 @@ class ExceptionController extends CommonController
         Response::closeOutputBuffers($startObLevel + 1, true);
 
         return ob_get_clean();
+    }
+
+    protected function extractCode($exception)
+    {
+        $code = $exception->getStatusCode();
+        if ($code === 0) {
+            //thrown exception that didn't set a code
+            $code = 500;
+        }
+
+        return $code;
+    }
+
+    /**
+     * construct subject mail.
+     */
+    protected function buildSubjectMail($code, $url, $auto)
+    {
+        if ($auto) {
+            $subject = 'Erreur code '.$code.' -  '.$url;
+        } else {
+            $subject = 'Demande de support - Code : '.$code;
+        }
+
+        return $subject;
+    }
+
+    protected function buildBodyMailFromException($user, $url, $exception, $auto)
+    {
+        $code         = $this->extractCode($exception);
+        $errorMessage = $exception->getMessage();
+        $stack        = $exception->getTrace();
+
+        return $this->buildBodyMail($code, $errorMessage, $url, $stack, $user, $auto);
+    }
+    /**
+     * construct body mail.
+     */
+    protected function buildBodyMail($code, $errorMessage, $url, $stack, $user, $auto)
+    {
+        $pile = $this->renderView('MauticCoreBundle:Exception:traces.html.php', ['traces' => $stack]);
+        if ($auto) {
+            $body = '<!DOCTYPE html> ';
+            $body .= '<html>';
+            $body .= '<body> ';
+            $body .= '<strong>MAIL AUTOMATIQUE</strong>  <br/> <br/> ';
+            $body .= 'User : '.$user->getName().', '.$user->getEmail().' <br/> ';
+            $body .= 'Type d?erreur : '.$code.' '.$errorMessage.' <br/>';
+            $body .= 'Url d?erreur : '.$url.' <br/> ';
+            $body .= 'Pile : '.$pile.' ';
+            $body .= '</body> ';
+            $body .= '</html> ';
+        } else {
+            $body = 'Votre identit� : '.$user->getName().', '.$user->getEmail().' %0D%0A %0D%0A';
+            $body .= 'Ce que vous vouliez faire : '.'%0D%0A %0D%0A';
+            $body .= 'Les actions que vous avez faites : '.'%0D%0A %0D%0A';
+            $body .= 'Ce qui s\'est pass� : '.'%0D%0A %0D%0A';
+            $body .= 'Informations compl�mentaires : '.'%0D%0A %0D%0A';
+            $body .= '*** NE PAS EFFACER CI DESSOUS - INFORMATIONS POUR LE SUPPORT ***'.'%0D%0A';
+            $body .= 'URL d\'erreur : '."$url %0D%0A";
+            $body .= 'Type d\'erreur : '."$code $errorMessage %0D%0A ";
+        }
+
+        return $body;
+    }
+
+    protected function sendMailSupportAutomatique($user, $url, $exception)
+    {
+        $code         = $this->extractCode($exception);
+        $errorMessage = $exception->getMessage();
+        $stack        = $exception->getTrace();
+
+        $subjectAuto = $this->buildSubjectMail($code, $url,  true);
+        $bodyAuto    = $this->buildBodyMailFromException($user, $url, $exception, true);
+
+        $subject = InputHelper::clean($subjectAuto);
+        // $body    = InputHelper::clean($bodyAuto);
+
+        $message = \Swift_Message::newInstance()
+            ->setSubject($subjectAuto)
+            ->setFrom([$user->getEmail() => $user->getName()])
+            ->setTo('support@webmecanik.com')
+            ->setCharset('utf-8')
+            ->setContentType('text/html')
+            ->setBody($bodyAuto, 'text / html');
+
+        $this->get('mailer')->send($message);
     }
 }
