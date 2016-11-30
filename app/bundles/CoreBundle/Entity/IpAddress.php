@@ -40,7 +40,7 @@ class IpAddress
     /**
      * @var array
      */
-    private $ipDetails;
+    private $ipDetails = [];
 
     /**
      * @param ORM\ClassMetadata $metadata
