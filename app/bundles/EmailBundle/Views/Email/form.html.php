@@ -104,13 +104,13 @@ $isCodeMode = ($email->getTemplate() === 'mautic_code_mode');
                                 <?php echo $view['form']->row($form['replyToAddress']); ?>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6" style="display:none;">
                                 <?php echo $view['form']->row($form['bccAddress']); ?>
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-6" style="display:none;">
                                 <div class="pull-left">
                                     <?php echo $view['form']->label($form['assetAttachments']); ?>
                                 </div>
