@@ -80,16 +80,19 @@ class Filemanager
         // else it takes $_SERVER['DOCUMENT_ROOT'] default value
         if ($this->config['options']['fileRoot'] !== false) {
             if ($this->config['options']['serverRoot'] === true) {
-                $this->doc_root      = $_SERVER['DOCUMENT_ROOT'];
+
+               // modif DDC pour coller a la config des server wmk
+                $this->doc_root      = substr(__DIR__, 0, strpos(__DIR__, '/app/'));
                 $this->separator     = basename($this->config['options']['fileRoot']);
-                $this->path_to_files = $_SERVER['DOCUMENT_ROOT'].'/'.$this->config['options']['fileRoot'];
+                $this->path_to_files = substr(__DIR__, 0, strpos(__DIR__, '/app/')).'/'.$this->config['options']['fileRoot'];
             } else {
                 $this->doc_root      = $this->config['options']['fileRoot'];
                 $this->separator     = basename($this->config['options']['fileRoot']);
                 $this->path_to_files = $this->config['options']['fileRoot'];
             }
         } else {
-            $this->doc_root      = $_SERVER['DOCUMENT_ROOT'];
+            // modif DDC pour coller a la config des server wmk
+            $this->doc_root      = substr(__DIR__, 0, strpos(__DIR__, '/app/'));
             $this->path_to_files = $this->root.$this->separator.'/';
         }
 
@@ -113,9 +116,8 @@ class Filemanager
     // allow Filemanager to be used with dynamic folders
     public function setFileRoot($path, $documentRoot = null)
     {
-        if ($documentRoot == null) {
-            $documentRoot = $_SERVER['DOCUMENT_ROOT'];
-        }
+        // modif pour coller au server wmk
+        $documentRoot = substr(__DIR__, 0, strpos(__DIR__, '/app/'));
 
         // Paths are bit complex to handle - kind of nightmare actually ....
         // 3 parts are availables
