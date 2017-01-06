@@ -32,7 +32,7 @@ class InesApi extends CrmApi
 				'ClRef' => 1650,
 				'CtRef' => 544,
 				'DescriptionCourte' => "Création du lead depuis Automation",
-				'FileRef' => 0,
+				'FileRef' => 0, /* mettre ici le canal de lead */
 				'CriticiteRef' => 0,
 				'TypeRef' => 0,
 				'EtatRef' => 0,
@@ -196,6 +196,9 @@ class InesApi extends CrmApi
 	 */
 	public function syncLeadToInes(Lead $lead)
 	{
+		$leadId = $lead->getId();
+		$leadPoints = $lead->getPoints();
+
 		// Lecture de l'intégralité des champs du lead courant, et du format (int, string, date...) de chaque champ
 		$rawFields = $lead->getFields();
 		$fieldsValues = array();
@@ -208,7 +211,7 @@ class InesApi extends CrmApi
 		}
 
 		// Cas particulier de la société
-		$company = $this->integration->getLeadMainCompany($lead->getId());
+		$company = $this->integration->getLeadMainCompany($leadId);
 
 		// Application du mapping au lead courant
 		// En dissociant les informations du contact et de la société (= client)
@@ -305,6 +308,8 @@ class InesApi extends CrmApi
 			$this->integration->setInesKeysToLead($lead, $internalCompanyRef, $internalContactRef);
 
 			// Si un canal de lead a été configuré chez INES, la création du contact doit être suivie par l'écriture d'un lead (au sens INES du terme)
+			var_dump($inesConfig['LeadRef']);
+			die();
 			if ($inesConfig['LeadRef']) {
 				// TODO : en attente du WS dédié chez INES
 			}
@@ -353,10 +358,20 @@ class InesApi extends CrmApi
 				// Appel du WS seulement si nécessaire
 				if ($updateNeeded) {
 
+					// Données à transmettre au web-service
 					$conceptDatas['ModifiedDate'] = date("Y-m-d\TH:i:s");
-
 					$wsDatas = array($concept => $conceptDatas);
-					$response = $this->request('ws/wsicm.asmx', 'Update'.ucfirst($concept), $wsDatas, true, true);
+
+					// Pour l'update du concept "client / société", on appelle le WS wsicm.asmx?op=UpdateClient
+					if ($concept == 'client') {
+						$response = $this->request('ws/wsicm.asmx', 'UpdateClient', $wsDatas, true, true);
+					}
+					// Pour l'update du concept "contact", on ajoute dans les données l'ID ATMT du contact, et le scoring
+					else {
+						$wsDatas['AutomationRef'] = $leadId;
+						$wsDatas['scoring'] = $leadPoints;
+						$response = $this->request('ws/wsAutomationsync.asmx', 'UpdateContact', $wsDatas, true, true);
+					}
 
 					if ( !isset($response['Update'.ucfirst($concept).'Result']['InternalRef'])) {
 						return false;

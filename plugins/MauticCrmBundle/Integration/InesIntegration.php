@@ -72,6 +72,19 @@ class InesIntegration extends CrmAbstractIntegration
 
 
 	/**
+	 * Indique quels champs de la config du plugin doivent être en INPUT de type PASSWORD
+	 *
+	 * @return array
+	 */
+	public function getSecretKeys()
+    {
+        return [
+            'password'
+        ];
+    }
+
+
+	/**
      * Ajoute des champs dans les formulaires "config" et "features" du plugin
 	 *
 	 * @param \Mautic\PluginBundle\Integration\Form|FormBuilder $builder
