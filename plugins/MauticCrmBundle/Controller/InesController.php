@@ -18,12 +18,12 @@ class InesController extends FormController
 	// Page qui affiche la file d'attente des leads à synchroniser / supprimer avec INES
     public function logsAction()
     {
-		// DEBUG : affichage de la config renvoyée par INES
-		/*
-		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
-		var_dump($inesIntegration->getCurrentSyncConfig());
-		die();
-		*/
+		// DEBUG
+		// $inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
+		// $inesIntegration->getApiHelper()->test();
+		// $leadRepo = $this->factory->getModel('lead.lead')->getRepository();
+		// $inesIntegration->getApiHelper()->syncLeadToInes($leadRepo->getEntity(18));
+		// die();
 
 		$inesSyncLogModel = $this->factory->getModel('crm.ines_sync_log');
 

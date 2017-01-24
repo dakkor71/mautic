@@ -28,9 +28,11 @@ class ApiController extends CommonApiController
 		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
 
 		$mappedFields = $inesIntegration->getMapping();
+		$dontSyncFieldKey = $inesIntegration->getDontSyncAtmtKey();
 
 		return new JsonResponse(array(
-			'mapping' => $mappedFields
+			'mapping' => $mappedFields,
+			'dontSyncFieldKey' => $dontSyncFieldKey
 		));
 	}
 }

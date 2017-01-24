@@ -45,12 +45,13 @@ class LeadSubscriber extends CommonSubscriber
 
 
 	/**
-	 * Idem lors du changement de la société d'un lead
+	 * Lorsque la société d'un lead change, on ré-initialise les clés INES
 	 */
-	public function onLeadCompanyChange(Events\LeadCompanyChange $event)
+	public function onLeadCompanyChange($event)
 	{
 		$lead = $event->getLead();
 		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
+		$inesIntegration->setInesKeysToLead($lead, 0, 0);
 		$inesIntegration->enqueueLead($lead);
 	}
 

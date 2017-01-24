@@ -325,6 +325,19 @@ class InesIntegration extends CrmAbstractIntegration
 			}
 		}
 
+		// Ajout du champ de sélection du champ "ne pas synchroniser avec INES"
+		$inesFields = array_merge(
+			array_slice($inesFields, 0, 2),
+			array(
+				'dontSyncToInes' => array(
+					'type' => 'string',
+					'label' => 'Indicateur : ne pas synchroniser',
+					'required' => true
+				)
+			),
+			array_slice($inesFields, 2)
+		);
+
 		return $inesFields;
 	}
 
@@ -342,7 +355,91 @@ class InesIntegration extends CrmAbstractIntegration
 		}
 
 		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
-		return $featureSettings['leadFields'];
+		$rawMapping = $featureSettings['leadFields'];
+
+		// Retrait du flag "ne pas synchroniser avec INES", qui ne doit pas être mappé
+		foreach($rawMapping as $internalKey => $atmtKey) {
+			if ($internalKey == 'dontSyncToInes') {
+				unset($rawMapping[$internalKey]);
+			}
+		}
+
+		return $rawMapping;
+	}
+
+
+	/**
+	 * Retourne l'identifiant du champ Automation contenant le flag "ne pas synchroniser"
+	 *
+	 * @return string
+	 */
+	public function getDontSyncAtmtKey()
+	{
+		if (!$this->isConfigured()) {
+			return '';
+		}
+
+		// Recherche du champ contenant l'info "don't sync"
+		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
+		$rawMapping = $featureSettings['leadFields'];
+		foreach($rawMapping as $internalKey => $atmtKey) {
+			if ($internalKey == 'dontSyncToInes') {
+				return $atmtKey;
+			}
+		}
+
+		return '';
+	}
+
+
+	/**
+	 * Vérifie si un contact a le flag "ne pas synchroniser" levé
+	 *
+	 * @param 	Mautic\LeadBundle\Entity\Lead	$lead
+	 * @return 	bool
+	 */
+	public function getDontSyncFlag(Lead $lead)
+	{
+		// Clé du champ don't sync
+		$dontSyncAtmtKey = $this->getDontSyncAtmtKey();
+
+		// Parcours des champs du contact, à la recherche du champ "don't sync"
+		$fields = $lead->getProfileFields();
+		foreach($fields as $key => $value) {
+			if ($key == $dontSyncAtmtKey) {
+				return (bool)$value;
+			}
+		}
+
+		// Si le champ n'est pas trouvé, par défaut on refuse la synchro
+		return true;
+	}
+
+
+	/**
+	 * Retourne la liste des champs non écrasables
+	 *
+	 * @param 	string 	$filterByConcept	contact | client
+	 * @return 	array
+	 */
+	public function getNotEcrasableFields($filterByConcept = false)
+	{
+		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
+		$fields = isset($featureSettings['not_ecrasable_fields']) ? $featureSettings['not_ecrasable_fields'] : array();
+
+		// Retour brut, sous la forme concept_fieldKey
+		if ($filterByConcept === false) {
+			return $fields;
+		}
+
+		// Retour filtré et sans préfixe
+		$conceptLength = strlen($filterByConcept);
+		foreach($fields as $f => $field) {
+			if (substr($field, 0, $conceptLength) == $filterByConcept) {
+				$fields[$f] = substr($field, $conceptLength + 1);
+			}
+		}
+		return $fields;
 	}
 
 
@@ -365,8 +462,7 @@ class InesIntegration extends CrmAbstractIntegration
 
 		// Liste des champs non écrasables ? (sous la forme : concept_inesKey)
 		// 1 : ceux cochés dans le formulaire par l'utilisateur
-		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
-		$notEcrasableFields = isset($featureSettings['not_ecrasable_fields']) ? $featureSettings['not_ecrasable_fields'] : array();
+		$notEcrasableFields = $this->getNotEcrasableFields();
 		// 2 : les champs exclus du formulaire
 		foreach($leadFields as $field) {
 			if ($field['excludeFromEcrasableConfig']) {
@@ -419,6 +515,30 @@ class InesIntegration extends CrmAbstractIntegration
 
 		return $mappedFields;
 	}
+
+
+	/**
+	 * Retourne le mapping automatique des champs de base ATMT / Company avec les champs INES / Client équivalents
+	 *
+	 * @return 	array
+	 */
+	public function getCompanyAutoMapping()
+	{
+		// clé INES/client => clé ATMT/company
+		return array(
+			'AutomationRef' => 'id',
+			'PrimaryMailAddress' => 'companyemail',
+			'Address1' => 'companyaddress1',
+			'Address2' => 'companyaddress2',
+			'ZipCode' => 'companyzipcode',
+			'City' => 'companycity',
+			'State' => 'companystate',
+			'Country' => 'companycountry',
+			'Phone' => 'companyphone',
+			'Website' => 'companywebsite'
+		);
+	}
+
 
 	/**
 	 * Mémorise les clés INES de contact et de société (=client) dans les champs d'un lead (définis par le mapping)
@@ -501,9 +621,10 @@ class InesIntegration extends CrmAbstractIntegration
 	{
 		$leadId = $lead->getId();
 		$company = $this->getLeadMainCompany($leadId);
+		$dontSyncToInes = $this->getDontSyncFlag($lead);
 
 		// Le lead ne doit pas être anonyme
-		if ( !empty($lead->getEmail()) && !empty($company) ) {
+		if ( !empty($lead->getEmail()) && !empty($company) && !$dontSyncToInes) {
 
 			// L'intégration doit être en mode 'full sync'
 			if ($this->isFullSync()) {
@@ -687,21 +808,32 @@ class InesIntegration extends CrmAbstractIntegration
 
 
 	/**
-	 * Retourne le nom de la société principale (= 1ère de la liste) liée à un contact
-	 * Ou une chaîne vide si n'existe pas
+	 * Retourne le nom de la société principale (= 1ère de la liste) liée à un contact.
+	 * Ou une chaîne vide si n'existe pas.
+	 * Si $onlyName vaut false, retourne l'ensemble des champs de cette companie, ou false.
 	 *
 	 * @param 	int 	$leadId
+	 * @param 	bool 	$onlyName
 	 *
-	 * @return 	string
+	 * @return 	mixed : string | array | false
 	 */
-	public function getLeadMainCompany($leadId)
+	public function getLeadMainCompany($leadId, $onlyName = true)
 	{
-		$companyLeadRepo = $this->factory->getModel('lead.company')->getCompanyLeadRepository();
-		$companies = $companyLeadRepo->getCompaniesByLeadId($leadId);
+		$companyRepo = $this->factory->getModel('lead.company')->getRepository();
+		$companies = $companyRepo->getCompaniesByLeadId($leadId);
 
-		$companyName = isset($companies[0]) ? $companies[0]['companyname'] : '';
+		if ($onlyName) {
+			return isset($companies[0]) ? $companies[0]['companyname'] : '';
+		}
+		else {
+			if ( !isset($companies[0]['id'])) {
+				return false;
+			}
 
-		return $companyName;
+			$company_id = $companies[0]['id'];
+			$company = $companyRepo->getEntity($company_id);
+			return $company->getProfileFields();
+		}
 	}
 
 
