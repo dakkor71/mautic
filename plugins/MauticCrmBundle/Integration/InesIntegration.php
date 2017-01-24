@@ -766,7 +766,7 @@ class InesIntegration extends CrmAbstractIntegration
 			$lead = $leadModel->getEntity($leadId);
 
  			// S'il est trouvé, synchronisation
-			if ($lead->getId() == $leadId) {
+			if ($lead && $lead->getId() == $leadId) {
 
 				$syncOk = $apiHelper->syncLeadToInes($lead);
 
@@ -794,6 +794,11 @@ class InesIntegration extends CrmAbstractIntegration
 				// Mise à jour de l'enregistrement en DB
 				$item->setCounter($itemCounter);
 				$item->setStatus($itemStatus);
+				$inesSyncLogModel->saveEntity($item);
+			}
+			// S'il n'est pas trouvé : status FAILED
+			else {
+				$item->setStatus('FAILED');
 				$inesSyncLogModel->saveEntity($item);
 			}
 		}
