@@ -3,8 +3,8 @@
 
 ##Configuration de l'intégration INES CRM
 
-1. Dans le menu settings / custom fields, ajouter deux champs supplémentaires, de type Text ou Number, qui serviront à mémoriser pour chaque lead les références des contacts et des clients dans INES CRM.
-Ils peuvent être nommés librement (par exemple "ID contact INES" et "ID client INES") et appartenir à n'importe quel groupe de champs.
+1. Dans le menu settings / custom fields, ajouter trois champs supplémentaires : "ID contact INES" de type Number, "ID client INES" de type Number, "Stop sync INES" de type Boolean. Ils peuvent être nommés librement et appartenir à n'importe quel groupe de champs.
+Ils serviront à mémoriser pour chaque lead les références des contacts et des clients dans INES CRM, et à interdire la synchronisation pour certains contacts.
 
 2. Dans le menu settings / plugins, si l'icone "INES" n'est pas présent, cliquer sur "Install / Upgrade Plugins".
 Cliquer sur l'icone INES et configurer l'intégration à l'aide de vos codes d'accès au CRM : Compte, Utilisateur, Mot de passe.
@@ -12,9 +12,10 @@ Puis tester la connexion.
 
 3. Lorsque la connexion est OK, enregistrer la configuration, la fermer puis l'ouvrir à nouveau.
 L'onglet "Contact Field Mapping" doit être présent.
-Dans cet onglet, affecter aux champs "Référence contact chez INES" et "Référence société chez INES" les champs Automation créés à l'étape 1.
+Dans cet onglet, affecter aux champs "Référence contact chez INES", "Référence société chez INES" et "Indication : ne pas synchroniser" les champs Automation créés à l'étape 1.
 Puis affecter parmis les autres champs proposés ceux qui doivent être synchronisés avec INES CRM.
 A noter que certains champs sont présents en doubles (par exemple l'adresse) car ils peuvent être synchronisés soit avec un contact INES, soit avec un client INES.
+Si les champs liés aux clients INES ne sont pas affectés, ils reprendront par défaut les données de la première société à laquelle appartient le contact à synchroniser.
 
 4. Dans l'onglet "Features" :
 L'option "Push contacts to this integration" active la fonction du même nom présente dans les actions de formulaire ou les campagnes.
@@ -57,6 +58,11 @@ Dans INES CRM, le client /contact a du être mis à jour, en respectant les éve
 Lancer la ligne de commande "php app/console crm:ines" puis rafraichir le journal de bord et s'assurer du changement d'état des leads en attente.
 
 
+##Retirer un contact de la synchronisation
+
+Editer le contact en question et positionner le champ "Stop sync INES" sur "Oui".
+
+
 ##Lecture des champs mappés via l'API Automation (réservé aux développeurs)
 
 EndPoint : GET /api/ines/getMapping
@@ -72,11 +78,13 @@ array(
 		1 => _config_champ_2_,
 		1 => _config_champ_3_,
 		...
-	)
+	),
+	'dontSyncFieldKey' => _clé_automation_du_champ_stop_sync_
 )
 ```
+Où _clé_automation_du_champ_stop_sync_ est l'identifiant du champ de contact Automation permettant d'interrompre la synnchronisation. Lors de l'utilisation de l'API "Edit Contact", utiliser cet identifiant et indiquer la valeur numérique 1 pour stopper la synchro d'un contact.
 
-Où _config_champ_x_ a la structure suivante :
+Et où _config_champ_x_ a la structure suivante :
 
 ```
 array(
