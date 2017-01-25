@@ -768,7 +768,6 @@ class InesIntegration extends CrmAbstractIntegration
  			// S'il est trouvé, synchronisation
 			if ($lead && $lead->getId() == $leadId) {
 
-				echo 'Synchro du lead '.$leadId.' en cours'."\n";
 				$syncOk = $apiHelper->syncLeadToInes($lead);
 
 				$itemCounter = $item->getCounter();

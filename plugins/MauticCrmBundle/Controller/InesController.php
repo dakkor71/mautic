@@ -20,6 +20,9 @@ class InesController extends FormController
     {
 		// DEBUG
 		// $inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
+		// $contact = $inesIntegration->getApiHelper()->getContactFromInes(373);
+		// var_dump($contact);
+		// die();
 		// $inesIntegration->getApiHelper()->test();
 		// $leadRepo = $this->factory->getModel('lead.lead')->getRepository();
 		// $inesIntegration->getApiHelper()->syncLeadToInes($leadRepo->getEntity(18));
