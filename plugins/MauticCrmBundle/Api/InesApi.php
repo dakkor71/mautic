@@ -57,7 +57,7 @@ class InesApi extends CrmApi
 		foreach(array(
 			'LastName' => "Nom (contact)",
 			'FirstName' => "Prénom (contact)",
-			'Position' => "Fonction (contact)",
+			'Function' => "Fonction (contact)",
 			'BussinesTelephone' => "Téléphone bureau (contact)",
 			'HomeTelephone' => "Téléphone domicile (contact)",
 			'MobilePhone' => "Téléphone mobile (contact)",
@@ -68,14 +68,22 @@ class InesApi extends CrmApi
 			'City' => "Ville (contact)",
 			'ZipCode' => "Code postal (contact)",
 			'Genre' => "Civilité (contact)",
-			'Language' => "Langue (contact)"
+			'Language' => "Langue (contact)",
+            'Author' => "Auteur (contact : nombre)",
+            'Comment' => "Commentaire (contact)",
+            'Confidentiality' => 'Confidentialité (contact)',
+            'DateOfBirth' => "Date d'anniversaire (contact)",
+            'Fax' => 'Fax (contact)',
+            'Rang' => 'Rang (contact)',
+            'SecondaryMailAddress' => 'Email secondaire (contact)',
+            'Service' => 'Service (contact)',
+            'Type' => 'Type (contact : nombre)'
 		) as $inesKey => $inesLabel) {
 			$defaultInesFields[] = array('contact', $inesKey, $inesLabel, false, false, false, false);
 		}
 
 		// 3 : les champs de société INES standards
 		foreach(array(
-			'Email' => "E-mail (société)",
 			'Address1' => "Adresse ligne 1 (société)",
 			'Address2' => "Adresse ligne 2 (société)",
 			'ZipCode' => "Code postal (société)",
@@ -83,7 +91,38 @@ class InesApi extends CrmApi
 			'State' => "Région (société)",
 			'Country' => "Pays (société)",
 			'Phone' => "Téléphone (société)",
-			'Website' => "Site internet (société)"
+			'Website' => "Site internet (société)",
+            'Confidentiality' => 'Confidentialité (société)',
+            'Service' => 'Service (société)',
+            'Comments' => 'Commentaires (société)',
+            'Manager' => 'Manager (société : nombre)',
+            'SalesResponsable' => 'Responsable des ventes (société : nombre)',
+            'TechnicalResponsable' => 'Responsable technique (société : nombre)',
+            'Origin' => 'Origine (société : nombre)',
+            'CustomerNumber' => 'N° de client (société : nombre)',
+            'CompanyTaxCode' => 'Code taxe (société)',
+            'VatTax' => 'TVA (société : nombre)',
+            'Bank' => 'Banque (société)',
+            'BankAccount' => 'Compte bancaire (société)',
+            'PaymentMethod' => 'Méthode de paiement (société)',
+            'PaymentMethodRef' => 'Référence méthode de paiement (société : nombre)',
+            'Discount' => 'Remise (société : nombre)',
+            'HeadQuarter' => 'Quartier général (société : nombre)',
+            'Language' => 'Langue (société)',
+            'Activity' => 'Activité (société)',
+            'AccountingCode' => 'Code comptabilité (société)',
+            'Scoring' => 'Score (société)',
+            'Remainder' => 'Reste (société : nombre)',
+            'MaxRemainder' => 'Reste maximum (société : nombre)',
+            'Moral' => 'Moral (société : nombre)',
+            'Folder' => 'Dossier (société : nombre)',
+            'Currency' => 'Monnaie (société)',
+            'BankReference' => 'Référence banque (société : nombre)',
+            'TaxType' => 'Type de taxe (société : nombre)',
+            'VatTaxValue' => 'Valeur TVA (société : nombre)',
+            'Creator' => 'Créateur (société : nombre)',
+            'Delivery' => 'Livraison (société : nombre)',
+            'Billing' => 'Facturation (société : nombre)'
 		) as $inesKey => $inesLabel) {
 			$defaultInesFields[] = array('client', $inesKey, $inesLabel, false, false, false, false);
 		}
@@ -227,27 +266,6 @@ class InesApi extends CrmApi
 			$mappedDatas[$concept][$fieldCategory][$inesFieldKey] = $leadValue;
 		}
 
-		// Traitement des champs standards de la société liée au lead
-		// Ce sont des champs qui ne peuvent pas être mappés car le mapping ne gère pas le concept "company", uniquement le concept "contact"
-		// Ils sont donc mappés en automatique ici
-		$companyMapping = $this->integration->getCompanyAutoMapping();
-		$notEcrasableClientsFields = $this->integration->getNotEcrasableFields('client');
-		foreach($companyMapping as $inesClientFieldKey => $atmtCompanyFieldKey) {
-
-			$companyFieldValue = $company[$atmtCompanyFieldKey];
-
-			// On force une valeur seulement si le champ n'est pas encore mappé, et si la valeur est renseignée
-			if ( !isset($mappedDatas['client']['standardFields'][$inesClientFieldKey]) && !empty($companyFieldValue)) {
-
-				$mappedDatas['client']['standardFields'][$inesClientFieldKey] = $companyFieldValue;
-
-				// Si le champ est non écrasable, on le mémorise
-				if (in_array($inesClientFieldKey, $notEcrasableClientsFields)) {
-					array_push($inesProtectedFields['client'], $inesClientFieldKey);
-				}
-			}
-		}
-
 
 		// Lecture des valeurs des clés INES pour le contact et la société
 		// Si c'est un nouveau lead, elles sont inconnues, sinon elles doivent avoir été mémorisées précédemment
@@ -271,21 +289,26 @@ class InesApi extends CrmApi
 			foreach($mappedDatas['contact']['standardFields'] as $inesFieldKey => $fieldValue) {
 				$datas['client']['Contacts']['ContactInfoAuto'][0][$inesFieldKey] = $fieldValue;
 			}
-			$datas['client']['Contacts']['ContactInfoAuto'][0]['AutomationRef'] = $leadId;
-			$datas['client']['Contacts']['ContactInfoAuto'][0]['Scoring'] = $leadPoints;
+
+            // Champs spécifiques, renseignés à part :
+            // Le champ "Type de société" est imposé par la config définie chez INES
+			$inesConfig = $this->getInesSyncConfig();
+			$datas['client']['Type'] = $inesConfig['SocieteType'];
+			$datas['client']['Contacts']['ContactInfoAuto'][0]['AutomationRef'] = $leadId; /* référence contact ATMT */
+			$datas['client']['Contacts']['ContactInfoAuto'][0]['Scoring'] = $leadPoints; /* scoring ATMT */
 
 			// Requête SOAP : Création chez INES
 			$response = $this->request('ws/wsAutomationsync.asmx', 'AddClientWithContacts', $datas, true, true);
 
-			if ( !isset($response['AddClientWithContactsResult']['InesRef']) ||
-				 !isset($response['AddClientWithContactsResult']['Contacts']['ContactInfoAuto']['InesRef'])
+			if ( !isset($response['AddClientWithContactsResult']['InternalRef']) ||
+				 !isset($response['AddClientWithContactsResult']['Contacts']['ContactInfoAuto']['InternalRef'])
 			) {
 				return false;
 			}
 
 			// et récupération en retour d'une clé contact et client
-			$internalCompanyRef = $response['AddClientWithContactsResult']['InesRef'];
-			$internalContactRef = $response['AddClientWithContactsResult']['Contacts']['ContactInfoAuto']['InesRef'];
+			$internalCompanyRef = $response['AddClientWithContactsResult']['InternalRef'];
+			$internalContactRef = $response['AddClientWithContactsResult']['Contacts']['ContactInfoAuto']['InternalRef'];
 			if ( !$internalCompanyRef || !$internalContactRef) {
 				return false;
 			}
@@ -323,13 +346,6 @@ class InesApi extends CrmApi
 			if ($clientWithContact['contact'] === false || $clientWithContact['client'] === false) {
 				$lead = $this->integration->setInesKeysToLead($lead, 0, 0);
 				return $this->syncLeadToInes($lead);
-			}
-
-			// FIX : INES utilise 'Function' pour un GET_CONTACT et 'Position' pour un UPDATE_CONTACT
-			// On corrige ici cette incohérence
-			if (isset($clientWithContact['contact']['Function'])) {
-				$clientWithContact['contact']['Position'] = $clientWithContact['contact']['Function'];
-				unset($clientWithContact['contact']['Function']);
 			}
 
 			// Mise à jour du contact, si nécessaire, puis du client, si nécessaire
@@ -375,11 +391,12 @@ class InesApi extends CrmApi
 					}
 					// Update du concept "contact"
 					else {
-						$wsDatas['contact']['InesRef'] = $wsDatas['contact']['InternalRef'];
+                        $wsDatas['contact']['ModificationDate'] = date("Y-m-d\TH:i:s");
 						$wsDatas['contact']['AutomationRef'] = $leadId;
 						$wsDatas['contact']['Scoring'] = $leadPoints;
+						$wsDatas['contact']['IsNew'] = false;
 
-						// Filtrage des champs : on ne conserve que ceux demandés par le WS
+						// Filtrage des champs : on ne conserve que ceux demandés par le WS spécifique ATMT
 						$contactDatas = $this->getContactTemplate();
 						foreach($contactDatas as $key => $value) {
 							if (isset($wsDatas['contact'][$key])) {
@@ -392,7 +409,7 @@ class InesApi extends CrmApi
 						$response = $this->request('ws/wsAutomationsync.asmx', 'UpdateContact', $wsDatas, true, true);
 
 						// En cas de succès, il doit retourner l'identifiant INES du contact
-						if ( !isset($response['UpdateContactResult']) || $response['UpdateContactResult'] != $wsDatas['contact']['InesRef']) {
+						if ( !isset($response['UpdateContactResult']) || $response['UpdateContactResult'] != $wsDatas['contact']['InternalRef']) {
 							return false;
 						}
 					}
@@ -460,7 +477,7 @@ class InesApi extends CrmApi
 
 
 	/**
-	 * Recherche chez INES un contact d'après son ID
+	 * Création chez INES d'un weblead lié à un contact
 	 *
 	 * @param 	int 			$internalContactRef
 	 * @param 	int 			$internalCompanyRef
@@ -471,7 +488,7 @@ class InesApi extends CrmApi
 	 */
 	public function addLeadToInesContact($internalContactRef, $internalCompanyRef, $email, $leadRef)
 	{
-		$response = $this->request('ws/wsics.asmx', 'AddLead', array(
+		$response = $this->request('ws/wsAutomationsync.asmx', 'AddLead', array(
 			'info' => array(
 				'ClRef' => $internalCompanyRef,
 				'CtRef' => $internalContactRef,
@@ -494,6 +511,23 @@ class InesApi extends CrmApi
 
 		return isset($response['AddLeadResult']);
 	}
+
+
+    /**
+     * Supprime un contact chez INES (en réalité le flag comme "ne plus synchroniser")
+     *
+     * @param 	int  $inesRef    // Référence INES d'un contact
+     *
+     * @return 	bool
+     */
+    public function deleteContact($inesRef)
+    {
+        $response = $this->request('ws/wsAutomationsync.asmx', 'DeleteAutomationContact', array(
+            'InesRef' => $inesRef
+        ), true, true);
+
+        return (isset($response['DeleteAutomationContactResult']) && $response['DeleteAutomationContactResult'] == 'Success');
+    }
 
 
 	/**
@@ -755,18 +789,53 @@ class InesApi extends CrmApi
 	protected function getClientTemplate()
 	{
 		return array(
-			'CompanyName' => '',
-			'Email' => '',
-			'Address1' => "",
-			'Address2' => "",
-			'ZipCode' => "",
-			'City' => "",
-			'State' => "",
-			'Country' => "",
-			'Phone' => "",
-			'Website' => "",
-			'AutomationRef' => 0,
-			'InesRef' => 0
+            'Confidentiality' => 'Undefined',
+            'CompanyName' => '',
+            'Type' => 0, /* à renseigner d'après config INES : type de société */
+            'Service' => '',
+            'Address1' => '',
+            'Address2' => '',
+            'ZipCode' => '',
+            'City' => '',
+            'State' => '',
+            'Country' => '',
+            'Phone' => '',
+            'Fax' => '',
+            'Website' => '',
+            'Comments' => '',
+            'Manager' => 0,
+            'SalesResponsable' => 0,
+            'TechnicalResponsable' => 0,
+            'CreationDate' => date("Y-m-d\TH:i:s"),
+            'ModifiedDate' => date("Y-m-d\TH:i:s"),
+            'Origin' => 0,
+            'CustomerNumber' => 0,
+            'CompanyTaxCode' => '',
+            'VatTax' => 0,
+            'Bank' => '',
+            'BankAccount' => '',
+            'PaymentMethod' => '',
+            'PaymentMethodRef' => 1, /* OBLIGATOIRE ET NON NUL, SINON ERROR */
+            'Discount' => 0,
+            'HeadQuarter' => 0,
+            'Language' => '',
+            'Activity' => '',
+            'AccountingCode' => '',
+            'Scoring' => '',
+            'Remainder' => 0,
+            'MaxRemainder' => 0,
+            'Moral' => 0,
+            'Folder' => 0,
+            'Currency' => '',
+            'BankReference' => 0,
+            'TaxType' => 0,
+            'VatTaxValue' => 0,
+            'Creator' => 0,
+            'Delivery' => 0,
+            'Billing' => 0,
+            'IsNew' => true,
+            'AutomationRef' => 0, /* ne pas renseigner car le concept de société ATMT n'est pas géré */
+            'InternalRef' => 0
 		);
 	}
 
@@ -779,24 +848,37 @@ class InesApi extends CrmApi
 	protected function getContactTemplate()
 	{
 		return array(
-			'BussinesTelephone' => "",
-			'City' => "",
-			'Country' => "",
-			'FirstName' => "",
-			'Position' => "",
-			'Genre' => "",
-			'MobilePhone' => "",
-			'LastName' => "",
-			'PrimaryMailAddress' => "",
-			'Language' => "",
-			'State' => "",
-			'ZipCode' => "",
-			'HomeTelephone' => "",
-			'HomeAddress' => "",
-			'BusinessAddress' => "",
-			'AutomationRef' => 0,
-			'InesRef' => 0,
-			'Scoring' => 0
+            'Author' => 0,
+            'BusinessAddress' => '',
+            'BussinesTelephone' => '',
+            'City' => '',
+            'Comment' => "",
+            'CompanyRef' => 0,
+            'Confidentiality' => 'Undefined',
+            'Country' => '',
+            'CreationDate' => date("Y-m-d\TH:i:s"),
+            'DateOfBirth' => date("Y-m-d\TH:i:s"),
+            'Fax' => '',
+            'FirstName' => '',
+            'Function' => '',
+            'Genre' => '',
+            'HomeAddress' => '',
+            'HomeTelephone' => '',
+            'IsNew' => true,
+            'Language' => '',
+            'LastName' => '',
+            'MobilePhone' => '',
+            'ModificationDate' => date("Y-m-d\TH:i:s"),
+            'PrimaryMailAddress' => '',
+            'Rang' => 'Principal',
+            'SecondaryMailAddress' => '',
+            'Service' => '',
+            'Type' => 0,
+            'State' => '',
+            'ZipCode' => '',
+            'InternalRef' => 0,
+            'AutomationRef' => 0,
+            'Scoring' => 0
 		);
 	}
 

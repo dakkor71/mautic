@@ -518,29 +518,6 @@ class InesIntegration extends CrmAbstractIntegration
 
 
 	/**
-	 * Retourne le mapping automatique des champs de base ATMT / Company avec les champs INES / Client équivalents
-	 *
-	 * @return 	array
-	 */
-	public function getCompanyAutoMapping()
-	{
-		// clé INES/client => clé ATMT/company
-		return array(
-			'AutomationRef' => 'id',
-			'PrimaryMailAddress' => 'companyemail',
-			'Address1' => 'companyaddress1',
-			'Address2' => 'companyaddress2',
-			'ZipCode' => 'companyzipcode',
-			'City' => 'companycity',
-			'State' => 'companystate',
-			'Country' => 'companycountry',
-			'Phone' => 'companyphone',
-			'Website' => 'companywebsite'
-		);
-	}
-
-
-	/**
 	 * Mémorise les clés INES de contact et de société (=client) dans les champs d'un lead (définis par le mapping)
 	 *
 	 * @param 	Mautic\LeadBundle\Entity\Lead	$lead
@@ -572,6 +549,42 @@ class InesIntegration extends CrmAbstractIntegration
 
 		return $lead;
 	}
+
+
+    /**
+     * Retourne les clés INES de contact et de société mémorisées dans un lead ATMT
+     *
+     * @param 	Mautic\LeadBundle\Entity\Lead 	$lead
+     *
+     * @return 	[int|false, int|false]      [$contactRef, $clienRef]
+     */
+    public function getInesKeys(Lead $lead)
+    {
+        // Champs du lead
+        $fields = $lead->getProfileFields();
+
+        // Champs ATMT contenant les clés INES
+        $atmtFieldsKeys = $this->getApiHelper()->getAtmtFieldsKeysFromInesFieldsKeys(['InternalContactRef', 'InternalCompanyRef']);
+
+        // Recherche des valeurs pour les 2 champs (contactRef et clientRef) s'ils sont définis
+        $contactRef = false;
+        if (isset($atmtFieldsKeys['InternalContactRef'])) {
+            $inesContactAtmtKey = $atmtFieldsKeys['InternalContactRef'];
+            if (isset($fields[$inesContactAtmtKey]) && $fields[$inesContactAtmtKey]) {
+                $contactRef = $fields[$inesContactAtmtKey];
+            }
+        }
+
+        $clientRef = false;
+        if (isset($atmtFieldsKeys['InternalCompanyRef'])) {
+            $inesCompanyAtmtKey = $atmtFieldsKeys['InternalCompanyRef'];
+            if (isset($fields[$inesCompanyAtmtKey]) && $fields[$inesCompanyAtmtKey]) {
+                $clientRef = $fields[$inesCompanyAtmtKey];
+            }
+        }
+
+        return array($contactRef, $clientRef);
+    }
 
 
 	/**
@@ -641,8 +654,19 @@ class InesIntegration extends CrmAbstractIntegration
 
 				$company = $this->getLeadMainCompany($lead->getId());
 
+                // La référence à mémoriser dépent de l'action
+                if ($action == 'UPDATE') {
+                    // ID du lead ATMT si update
+                    $refId = $lead->getId();
+                }
+                else {
+                    // ID chez INES si delete
+                    list($contactRef, $clientRef) = $this->getInesKeys($lead);
+                    $refId = $contactRef;
+                }
+
 				$entity->setAction($action)
-					   ->setLeadId( $lead->getId() )
+					   ->setLeadId($refId)
 					   ->setLeadEmail( $lead->getEmail() )
 					   ->setLeadCompany($company);
 
@@ -805,8 +829,37 @@ class InesIntegration extends CrmAbstractIntegration
 
 		// ETAPE 2 : DELETE : lot de leads à SUPPRIMER
 		$pendingDeletingItems = $inesSyncLogModel->getPendingEntities('DELETE', $numberToProcess);
-		$failedDeletedCounter = count($pendingDeletingItems);
-		/* TODO */
+        foreach($pendingDeletingItems as $item) {
+
+			$inesRefId = $item->getLeadId();
+
+            if ($inesRefId > 0) {
+                $itemCounter = $item->getCounter();
+
+                $deleteOk = $apiHelper->deleteContact($inesRefId);
+
+                if ($deleteOk) {
+                    $deletedCounter++;
+                    $itemStatus = 'DONE';
+                    $itemCounter++;
+                }
+                else {
+                    $failedDeletedCounter++;
+                    $itemCounter++;
+                    if ($itemCounter == 3) {
+                        $itemStatus = 'FAILED';
+                    }
+                }
+
+                $item->setCounter($itemCounter);
+                $item->setStatus($itemStatus);
+                $inesSyncLogModel->saveEntity($item);
+            }
+            else {
+                $item->setStatus('FAILED');
+                $inesSyncLogModel->saveEntity($item);
+            }
+        }
 
 		return array($updatedCounter, $failedUpdatedCounter, $deletedCounter, $failedDeletedCounter);
 	}
