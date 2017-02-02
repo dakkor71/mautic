@@ -33,7 +33,7 @@ class JsController extends CommonController
             $dispatcher->dispatch(CoreEvents::BUILD_MAUTIC_JS, $event);
         }
 
-        return new Response($event->getJs(), 200, ['Content-Type' => 'application/javascript']);
+        return new Response($event->getJs(), 200, ['Content-Type' => 'application/javascript', 'Cache-Control' => 'max-age=21600']);
     }
 
     /**
