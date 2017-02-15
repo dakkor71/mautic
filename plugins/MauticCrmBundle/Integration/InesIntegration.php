@@ -301,6 +301,18 @@ class InesIntegration extends CrmAbstractIntegration
             if ($this->isAuthorized()) {
                 $leadFields = $this->getApiHelper()->getLeadFields();
 
+                $inesContactFields = array();
+                $inesClientFields = array();
+
+                // Ajout du champ "ne pas synchroniser avec INES" en première position des champs de contact
+        		$inesContactFields['dontSyncToInes'] = array(
+        			'type' => 'string',
+        			'label' => 'Indicateur : ne pas synchroniser',
+        			'required' => true
+        		);
+
+                // Préparation des champs du formulaire
+                // Séparation de la liste par concept (contact / client)
 				foreach($leadFields as $field) {
 
 					// Les champs dont le mapping est imposé en interne sont exclus du formulaire de mapping
@@ -309,34 +321,55 @@ class InesIntegration extends CrmAbstractIntegration
 					}
 
 					$key = $field['concept'].'_'.$field['inesKey'];
-
-					$inesFields[$key] = array(
+                    $value = array(
 						'type' => 'string',
 						'label' => $field['inesLabel'],
 						'required' => $field['isMappingRequired']
 					);
-				}
+
+                    // Cas particulier : la référence INES "company ref", bien que liée au concept contact, doit être placé dans la colonne de droite
+                    if ($field['concept'] == 'contact' && $key != 'contact_InternalCompanyRef') {
+                        $inesContactFields[$key] = $value;
+                    }
+                    else {
+                        $inesClientFields[$key] = $value;
+                    }
+                }
+
+                // Alternance des champs de contact / société pour remplir les colonnes gauche et droite
+                $inesContactFields = array_reverse($inesContactFields, true);
+                $inesClientFields = array_reverse($inesClientFields, true);
+                $isLeftCol = true;
+                while( !empty($inesContactFields) || !empty($inesClientFields)) {
+
+                    // Sur quelle liste (contact ou client) doit-on dépiler une paire clé/valeur ?
+                    if (($isLeftCol && empty($inesContactFields)) || (!$isLeftCol && !empty($inesClientFields))){
+                        $currentList =& $inesClientFields;
+                    }
+                    else {
+                        $currentList =& $inesContactFields;
+                    }
+
+                    // Dépilage
+                    end($currentList);
+                    $key = key($currentList);
+                    $value = array_pop($currentList);
+
+                    // Ajout du champ à la liste définitive
+                    $inesFields[$key] = $value;
+
+                    // Alternance colonne gauche / colonne droite
+                    $isLeftCol = !$isLeftCol;
+                }
 			}
-		} catch (\Exception $e) {
+		}
+        catch (\Exception $e) {
 			$this->logIntegrationError($e);
 
-			if (!$silenceExceptions) {
+			if ( !$silenceExceptions) {
 				throw $e;
 			}
 		}
-
-		// Ajout du champ de sélection du champ "ne pas synchroniser avec INES"
-		$inesFields = array_merge(
-			array_slice($inesFields, 0, 2),
-			array(
-				'dontSyncToInes' => array(
-					'type' => 'string',
-					'label' => 'Indicateur : ne pas synchroniser',
-					'required' => true
-				)
-			),
-			array_slice($inesFields, 2)
-		);
 
 		return $inesFields;
 	}
