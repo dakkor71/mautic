@@ -123,6 +123,9 @@ class UpdateHelper
         // Before processing the update data, send up our metrics
         try {
             // Generate a unique instance ID for the site
+            /*
+            // version_atmt
+            DESACTIVE par DDC, le code ci dessous a pour unique but de faire du tracking de mise a jour par les server mautic.org
             $instanceId = hash('sha1', $this->factory->getParameter('secret_key').'Mautic'.$this->factory->getParameter('db_driver'));
 
             $data = array_map(
@@ -139,6 +142,7 @@ class UpdateHelper
             );
 
             $this->connector->post('https://updates.mautic.org/stats/send', $data, [], 10);
+            */
         } catch (\Exception $exception) {
             // Not so concerned about failures here, move along
         }
@@ -154,7 +158,7 @@ class UpdateHelper
                 ]
             );
 
-            $data   = $this->connector->post('https://updates.mautic.org/index.php?option=com_mauticdownload&task=checkUpdates', $appData, [], 10);
+            $data   = $this->connector->post('http://update.webmecanik.com/atmt_update.php', $appData, [], 10);
             $update = json_decode($data->body);
         } catch (\Exception $exception) {
             // Log the error
