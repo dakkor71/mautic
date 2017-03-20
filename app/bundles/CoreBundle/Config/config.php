@@ -877,5 +877,6 @@ return [
         'custom_logo_style'         => '',
         'custom_logo_text_src'      => 'media/images/mautic_logo_text.svg',
         'custom_logo_text_style'    => '',
+        'max_entity_lock_time'      => 0,
     ],
 ];
