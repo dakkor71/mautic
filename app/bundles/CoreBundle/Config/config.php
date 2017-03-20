@@ -86,12 +86,12 @@ return [
                 'method'     => 'DELETE',
             ],
             'mautic_core_api_stats' => [
-               'path'       => '/stats/{table}',
-               'controller' => 'MauticCoreBundle:Api\StatsApi:list',
-               'defaults'   => [
+                'path'       => '/stats/{table}',
+                'controller' => 'MauticCoreBundle:Api\StatsApi:list',
+                'defaults'   => [
                     'table' => '',
                 ],
-           ],
+            ],
         ],
     ],
     'menu' => [
@@ -425,6 +425,7 @@ return [
                     'kernel',
                 ],
                 'serviceAlias' => 'mautic.config',
+                'alias'        => 'core_parameters',
             ],
             'mautic.helper.bundle' => [
                 'class'     => 'Mautic\CoreBundle\Helper\BundleHelper',
@@ -870,5 +871,11 @@ return [
         'cors_restrict_domains'     => true,
         'cors_valid_domains'        => [],
         'rss_notification_url'      => 'https://mautic.com/?feed=rss2&tag=notification',
+        'custom_sidebar_style'      => '',
+        'custom_sidebar_link_style' => '',
+        'custom_logo_src'           => 'media/images/mautic_logo.svg',
+        'custom_logo_style'         => '',
+        'custom_logo_text_src'      => 'media/images/mautic_logo_text.svg',
+        'custom_logo_text_style'    => '',
     ],
 ];
