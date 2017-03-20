@@ -230,6 +230,11 @@ class ExceptionController extends CommonController
 
     protected function sendMailSupportAutomatique($user, $url, $exception)
     {
+        $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto');
+        if (empty($mailDest)) {
+            return; //early break;
+        }
+
         $code         = $this->extractCode($exception);
         $errorMessage = $exception->getMessage();
         $stack        = $exception->getTrace();
