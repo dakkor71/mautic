@@ -39,6 +39,9 @@ class LeadSubscriber extends CommonSubscriber
     public function onLeadPostSave(Events\LeadEvent $event)
     {
 		$lead = $event->getLead();
+        if ($lead === false) {
+            return;
+        }
 		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
 		$inesIntegration->enqueueLead($lead);
 	}

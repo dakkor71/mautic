@@ -16,6 +16,7 @@ use Mautic\LeadBundle\Entity\Lead;
  */
 class InesApi extends CrmApi
 {
+
 	/**
 	 * Force la suppression / mise à jour de l'ID de session du web-service
 	 * Utilisé par le bouton "Tester la connexion" de l'onglet de config
@@ -38,100 +39,151 @@ class InesApi extends CrmApi
 	 */
 	public function getLeadFields()
 	{
-		$inesFields = array();
+        // Lecture de la config définie chez INES
+		$inesConfig = $this->getInesSyncConfig();
 
-		$fieldKeys = array('concept', 'inesKey', 'inesLabel', 'isCustomField', 'isMappingRequired', 'autoMapping', 'excludeFromEcrasableConfig');
+        // Clés qui seront mappées avec les tableaux de valeurs ci-dessous
+		$fieldKeys = array(
+            'concept', 'inesKey', 'inesLabel', 'isCustomField', 'isMappingRequired', 'autoMapping', 'excludeFromEcrasableConfig', 'atmtCustomFieldToCreate'
+        );
 
-		/** Champs inclus en dur **/
+        /////// ETAPE 1
+		// Tous les champs INES standards mappables avec ATMT
+        // Ne sont pas inclus : Score et Désabonnement car gérés hors-mapping
+        // Attention : le champ e-mail ne doit pas être auto-mappé, sinon la synchro peut ne pas être déclenchée par CrmAbstractIntegration::pushLead
+		$defaultInesFields = array();
+		$defaultInesFields[] = array('contact', 'InternalContactRef', 'Référence INES (contact)', false, true, 'ines_contact_ref', true, ['alias' => "ines_contact_ref", 'type' => "number"]);
+		$defaultInesFields[] = array('contact', 'InternalCompanyRef', 'Référence INES (société)', false, true, 'ines_client_ref', true, ['alias' => "ines_client_ref", 'type' => "number"]);
+		$defaultInesFields[] = array('contact', 'PrimaryMailAddress', 'E-mail principal', false, true, false, true, false);
+        $defaultInesFields[] = array('contact', 'Genre', "Civilité (contact)", false, false, false, false, ['alias' => "ines_contact_civilite"]);
+        $defaultInesFields[] = array('contact', 'LastName', "Nom (contact)", false, false, 'lastname', false, false);
+        $defaultInesFields[] = array('contact', 'FirstName', "Prénom (contact)", false, false, 'firstname', false, false);
+        $defaultInesFields[] = array('contact', 'Function', "Fonction (contact)", false, false, false, false, ['alias' => "ines_contact_fonction"]);
+        $defaultInesFields[] = array('contact', 'Type', 'Type (contact)', false, false, false, false, ['alias' => "ines_contact_type", 'type' => "select", 'valuesFromWS' => "GetTypeContactList"]);
+        $defaultInesFields[] = array('contact', 'Service', 'Service (contact)', false, false, false, false, ['alias' => "ines_contact_service"]);
+        $defaultInesFields[] = array('contact', 'BussinesTelephone', "Téléphone bureau (contact)", false, false, false, false, ['alias' => "ines_contact_tel_bureau", 'type' => "tel"]);
+        $defaultInesFields[] = array('contact', 'HomeTelephone', "Téléphone domicile (contact)", false, false, false, false, ['alias' => "ines_contact_tel_domicile", 'type' => "tel"]);
+        $defaultInesFields[] = array('contact', 'MobilePhone', "Téléphone mobile (contact)", false, false, false, false, ['alias' => "ines_contact_tel_mobile", 'type' => "tel"]);
+        $defaultInesFields[] = array('contact', 'Fax', 'Fax (contact)', false, false, false, false, ['alias' => "ines_contact_fax", 'type' => "tel"]);
+        $defaultInesFields[] = array('contact', 'HomeAddress', "Adresse 1 (contact)", false, false, false, false, ['alias' => "ines_contact_adr1"]);
+        $defaultInesFields[] = array('contact', 'BusinessAddress', "Adresse 2 (contact)", false, false, false, false, ['alias' => "ines_contact_adr2"]);
+        $defaultInesFields[] = array('contact', 'ZipCode', "Code postal (contact)", false, false, false, false, ['alias' => "ines_contact_cp"]);
+        $defaultInesFields[] = array('contact', 'City', "Ville (contact)", false, false, false, false, ['alias' => "ines_contact_ville"]);
+        $defaultInesFields[] = array('contact', 'State', "Région (contact)", false, false, false, false, ['alias' => "ines_contact_region"]);
+        $defaultInesFields[] = array('contact', 'Country', "Pays (contact)", false, false, false, false, ['alias' => "ines_contact_pays"]);
+        $defaultInesFields[] = array('contact', 'Language', "Langue (contact)", false, false, false, false, ['alias' => "ines_contact_lang"]);
+        $defaultInesFields[] = array('contact', 'Author', "Responsable (contact)", false, false, false, false, ['alias' => "ines_contact_resp", 'type' => "select", 'valuesFromWS' => "GetUserInfoFromUserRef"]);
+        $defaultInesFields[] = array('contact', 'Comment', "Remarque (contact)", false, false, false, false, ['alias' => "ines_contact_remarque"]);
+        $defaultInesFields[] = array('contact', 'Confidentiality', 'Diffusion (contact)', false, false, false, false, ['alias' => "ines_contact_diffusion", 'type' => "select", 'values' => ["-1" => "lecture seule", "0" => "lecture / écriture", "1" => "confidentiel"] ]);
+        $defaultInesFields[] = array('contact', 'DateOfBirth', "Date d'anniversaire (contact)", false, false, false, false, ['alias' => "ines_contact_birthday", 'type' => "date"]);
+        $defaultInesFields[] = array('contact', 'Rang', 'Etat (contact)', false, false, false, false, ['alias' => "ines_contact_etat", 'type' => "select", 'values' => ["0" => "secondaire", "1" => "principal", "2" => "archivé"] ]);
+        $defaultInesFields[] = array('contact', 'SecondaryMailAddress', 'Email 2 (contact)', false, false, false, false, ['alias' => "ines_contact_email2"]);
+        $defaultInesFields[] = array('contact', 'NPai', 'NPAI (contact)', false, false, 'ines_contact_npai', true, ['alias' => 'ines_contact_npai', 'type' => "boolean"]);
+        $defaultInesFields[] = array('client', 'CompanyName', 'Société', false, true, 'company', true, false);
+        $defaultInesFields[] = array('client', 'Type', 'Type (société)', false, false, false, false, ['alias' => "ines_client_type", 'type' => "select", 'valuesFromWS' => "GetTypeClientList"]);
+        $defaultInesFields[] = array('client', 'Manager', 'Resp. Dossier (société)', false, false, false, false, ['alias' => "ines_client_resp_dossier", 'type' => "select", 'valuesFromWS' => "GetUserInfoFromUserRef"]);
+        $defaultInesFields[] = array('client', 'SalesResponsable', 'Commercial (société)', false, false, false, false, ['alias' => "ines_client_commercial", 'type' => "select", 'valuesFromWS' => "GetUserInfoFromRHRef"]);
+        $defaultInesFields[] = array('client', 'TechnicalResponsable', 'Resp. technique (société)', false, false, false, false, ['alias' => "ines_client_resp_tech", 'type' => "select", 'valuesFromWS' => "GetUserInfoFromUserRef"]);
+        $defaultInesFields[] = array('client', 'Phone', "Téléphone (société)", false, false, false, false, ['alias' => "ines_client_tel", 'type' => "tel"]);
+        $defaultInesFields[] = array('client', 'Fax', 'Fax (société)', false, false, false, false, ['alias' => "ines_client_fax", 'type' => "tel"]);
+        $defaultInesFields[] = array('client', 'Address1', "Adresse ligne 1 (société)", false, false, false, false, ['alias' => "ines_client_adr1"]);
+        $defaultInesFields[] = array('client', 'Address2', "Adresse ligne 2 (société)", false, false, false, false, ['alias' => "ines_client_adr2"]);
+        $defaultInesFields[] = array('client', 'ZipCode', "Code postal (société)", false, false, false, false, ['alias' => "ines_client_cp"]);
+        $defaultInesFields[] = array('client', 'City', "Ville (société)", false, false, false, false, ['alias' => "ines_client_ville"]);
+        $defaultInesFields[] = array('client', 'State', "Région (société)", false, false, false, false, ['alias' => "ines_client_region"]);
+        $defaultInesFields[] = array('client', 'Country', "Pays (société)", false, false, false, false, ['alias' => "ines_client_pays"]);
+        $defaultInesFields[] = array('client', 'Origin', 'Origine (société)', false, false, false, false, ['alias' => "ines_client_origine", 'type' => "select", 'valuesFromWS' => "GetOriginList"]);
+        $defaultInesFields[] = array('client', 'Website', "Site internet (société)", false, false, false, false, ['alias' => "ines_client_site_web", 'type' => "url"]);
+        $defaultInesFields[] = array('client', 'Confidentiality', 'Diffusion (société)', false, false, false, false, ['alias' => "ines_client_diffusion", 'type' => "select", 'values' => ["-1" => "lecture seule", "0" => "lecture / écriture", "1" => "confidentiel"]]);
+        $defaultInesFields[] = array('client', 'Comments', 'Remarque (société)', false, false, false, false, ['alias' => "ines_client_remarque"]);
+        $defaultInesFields[] = array('client', 'CustomerNumber', 'N° de client (société)', false, false, false, false, ['alias' => "ines_client_num_client", 'type' => "number"]);
+        $defaultInesFields[] = array('client', 'Language', 'Langue (société)', false, false, false, false, ['alias' => "ines_client_lang"]);
+        $defaultInesFields[] = array('client', 'Activity', 'Activité (société)', false, false, false, false, ['alias' => "ines_client_activite"]);
+        $defaultInesFields[] = array('client', 'Scoring', 'Score (société)', false, false, false, false, ['alias' => "ines_client_score"]);
 
-		// 1 : les champs spéciaux : email, société, contactID et societeID
-		$defaultInesFields = array(
-			array('contact', 'InternalContactRef', 'Réference contact chez INES', false, true, false, true),
-			array('contact', 'InternalCompanyRef', 'Réference société chez INES', false, true, false, true),
-			array('contact', 'PrimaryMailAddress', 'E-mail principal', false, true, 'email', true),
-			array('client', 'CompanyName', 'Société', false, true, 'company', true)
-		);
-
-		// 2 : les champs de contact standards
-		foreach(array(
-            'Genre' => "Civilité (contact)",
-			'LastName' => "Nom (contact)",
-			'FirstName' => "Prénom (contact)",
-			'Function' => "Fonction (contact)",
-            'Type' => 'Type (contact)',
-            'Service' => 'Service (contact)',
-            'BussinesTelephone' => "Téléphone bureau (contact)",
-            'HomeTelephone' => "Téléphone domicile (contact)",
-            'MobilePhone' => "Téléphone mobile (contact)",
-            'Fax' => 'Fax (contact)',
-            'HomeAddress' => "Adresse 1 (contact)",
-            'BusinessAddress' => "Adresse 2 (contact)",
-            'ZipCode' => "Code postal (contact)",
-            'City' => "Ville (contact)",
-            'State' => "Région (contact)",
-            'Country' => "Pays (contact)",
-            'Language' => "Langue (contact)",
-            'Author' => "Auteur (contact : nombre)",
-            'Comment' => "Commentaire (contact)",
-            'Confidentiality' => 'Diffusion (contact)',
-            'DateOfBirth' => "Date d'anniversaire (contact)",
-            'Rang' => 'Etat (contact)',
-            'SecondaryMailAddress' => 'Email 2 (contact)'
-		) as $inesKey => $inesLabel) {
-			$defaultInesFields[] = array('contact', $inesKey, $inesLabel, false, false, false, false);
-		}
-
-		// 3 : les champs de société INES standards
-		foreach(array(
-            'Type' => 'Type (société)',
-            'Manager' => 'Resp. Dossier (société)',
-            'SalesResponsable' => 'Commercial (société)',
-            'TechnicalResponsable' => 'Resp. technique (société)',
-            'Phone' => "Téléphone (société)",
-            'Fax' => 'Fax (société)',
-            'Address1' => "Adresse ligne 1 (société)",
-            'Address2' => "Adresse ligne 2 (société)",
-            'ZipCode' => "Code postal (société)",
-            'City' => "Ville (société)",
-            'State' => "Région (société)",
-            'Country' => "Pays (société)",
-            'Origin' => 'Origine (société)',
-            'Website' => "Site internet (société)",
-            'Confidentiality' => 'Confidentialité (société)',
-            'Comments' => 'Commentaires (société)',
-            'CustomerNumber' => 'N° de client (société : nombre)',
-            'Language' => 'Langue (société)',
-            'Activity' => 'Activité (société)',
-            'Scoring' => 'Score (société)'
-		) as $inesKey => $inesLabel) {
-			$defaultInesFields[] = array('client', $inesKey, $inesLabel, false, false, false, false);
-		}
-
+        $inesFields = array();
 		foreach($defaultInesFields as $field) {
 			$inesFields[] = array_combine($fieldKeys, $field);
 		}
 
 
-		/** Champs custom, obtenus par un appel au WS INES **/
+        /////// ETAPE 2
+        //// Ajout des champs custom INES, pour les contacts INES et les sociétés INES
 
-		// Lecture de la config définie chez INES
-		$inesConfig = $this->getInesSyncConfig();
+        $availableCustomFieldTypes = [
+            'text' => 'text', 'url' => 'url', 'list' => 'select', 'user' => 'select', 'numeral' => 'number', 'boolean' => 'boolean', 'date' => 'date'
+        ];
 
-		// Ajout des champs customs de type société
-		foreach($inesConfig['CompanyCustomFields'] as $companyFieldsGroup) {
-			foreach($companyFieldsGroup as $companyField) {
-				$field = array('client', $companyField['InesID'], $companyField['InesName'].' (société)', true, false, false, false);
-				$inesFields[] = array_combine($fieldKeys, $field);
-			}
-		}
+        $concepts = ['contact' => 'Contact', 'client' => 'Company'];
+        foreach($concepts as $concept => $conceptLabel) {
+            if (is_array($inesConfig[$conceptLabel.'CustomFields'])) {
+                foreach($inesConfig[$conceptLabel.'CustomFields'] as $field) {
 
-		// Ajout des champs customs de type contact
-		foreach($inesConfig['ContactCustomFields'] as $contactFieldsGroup) {
-			foreach($contactFieldsGroup as $contactField) {
-				$field = array('contact', $contactField['InesID'], $contactField['InesName'].' (contact)', true, false, false, false);
-				$inesFields[] = array_combine($fieldKeys, $field);
-			}
-		}
+                    // Conversion du type de champ INES en type de champ ATMT
+                    if ( !isset($availableCustomFieldTypes[$field['Type']])) {
+                        continue;
+                    }
+                    $atmtType = $availableCustomFieldTypes[$field['Type']];
+
+                    $atmtCustomFieldToCreate = [
+                        'alias' => 'ines_'.$concept.'_custom_'.$field['InesID'],
+                        'type' => $atmtType
+                    ];
+
+                    // Type INES "user"
+                    if ($field['Type'] == 'user') {
+                        $atmtCustomFieldToCreate['valuesFromWS'] = 'GetUserInfoFromUserRef';
+                    }
+                    // Liste de valeurs avec des clés identiques
+                    else if ($atmtType == 'select') {
+
+                        $values = end($field['ValueList']);
+
+                        // Exclusion des valeurs vides
+                        $values = array_filter($values, function ($value) {
+                            return !empty($value);
+                        });
+
+                        // Pour ces listes de valeurs, on n'utilise que les clés : les étiquettes sont vierges
+                        $atmtCustomFieldToCreate['values'] = array_combine(
+                            array_values($values),
+                            array_fill(0, count($values), "")
+                        );
+                    }
+
+                    $inesLabel = $field['InesName'].' ('.(($concept == 'contact') ? 'contact' : 'société').')';
+
+                    $inesFields[] = array_combine(
+                        $fieldKeys,
+                        [$concept, $field['InesID'], $inesLabel, true, false, false, false, $atmtCustomFieldToCreate]
+                    );
+                }
+            }
+        }
+
+
+        /////// ETAPE 3
+        // Remplissage des clés/valeurs possibles pour les champs dont les valeurs dépendent d'un WS INES
+
+        foreach($inesFields as $k => $field) {
+
+            // Si le champ est concerné...
+            if ($field['atmtCustomFieldToCreate'] !== false && isset($field['atmtCustomFieldToCreate']['valuesFromWS'])) {
+
+                // Le WS existe-t-il dans la config ?
+                $wsName = $field['atmtCustomFieldToCreate']['valuesFromWS'];
+                if (isset($inesConfig['ValuesFromWS'][$wsName])) {
+
+                    // Si oui on utilise les clés/valeurs lues dans ce WS pour le champ courant
+                    $values = $inesConfig['ValuesFromWS'][$wsName];
+                    $inesFields[$k]['atmtCustomFieldToCreate']['values'] = $values;
+                    unset($inesFields[$k]['atmtCustomFieldToCreate']['ValuesFromWS']);
+                }
+                else {
+                    $this->integration->log("INEW WS not found : $wsName");
+                }
+            }
+        }
 
 		return $inesFields;
 	}
@@ -150,7 +202,6 @@ class InesApi extends CrmApi
 
 		// Un lead n'est synchronisé que s'il possède au minimum un email et une société
 		if ( !empty($lead->getEmail()) && !empty($company)) {
-
 			try {
 				$this->syncLeadToInes($lead);
 
@@ -177,8 +228,9 @@ class InesApi extends CrmApi
 	{
 		$leadId = $lead->getId();
 		$leadPoints = $lead->getPoints();
+        $leadDesaboFlag = empty($lead->getDoNotContact()->toArray()) ? 0 : 1;
 		$company = $this->integration->getLeadMainCompany($leadId, false);
-		$dontSyncToInes = $this->integration->getDontSyncFlag($lead);
+        $dontSyncToInes = $this->integration->getDontSyncFlag($lead);
 
 		if ( !isset($company['companyname']) || empty($company['companyname']) || $dontSyncToInes) {
 			return false;
@@ -206,11 +258,13 @@ class InesApi extends CrmApi
 				'customFields' => array()
 			)
 		);
+
 		// Structure pour mémoriser les champs non-écrasables
 		$inesProtectedFields = array(
 			'contact' => array(),
 			'client' => array()
 		);
+
 		$mapping = $this->integration->getMapping();
 		foreach($mapping as $mappingItem) {
 
@@ -244,32 +298,10 @@ class InesApi extends CrmApi
 			$mappedDatas[$concept][$fieldCategory][$inesFieldKey] = $leadValue;
 		}
 
-
-        // Pour certains champs, conversion de la valeur de type string en référence INES de type int
-        $tables = $this->getStringToIntConversionTables();
-        if (!empty($tables)) {
-            foreach($tables as $table) {
-
-                $concept = $table['concept'];
-                $inesFieldKey = $table['inesFieldKey'];
-
-                if (isset($mappedDatas[$concept]['standardFields'][$inesFieldKey])) {
-
-                    // Recherche de la valeur string dans la table de conversion
-                    $stringValue = $mappedDatas[$concept]['standardFields'][$inesFieldKey];
-                    $intValue = array_search($stringValue, $table['conversions']);
-
-                    // Enregistrement de la valeur int à la place de la valeur string (ou 0 si non trouvé)
-                    $mappedDatas[$concept]['standardFields'][$inesFieldKey] = ($intValue !== false) ? $intValue : 0;
-                }
-            }
-        }
-
 		// Lecture des valeurs des clés INES pour le contact et la société
 		// Si c'est un nouveau lead, elles sont inconnues, sinon elles doivent avoir été mémorisées précédemment
 		$internalContactRef = isset($mappedDatas['contact']['standardFields']['InternalContactRef']) ? $mappedDatas['contact']['standardFields']['InternalContactRef'] : 0;
 		$internalCompanyRef = isset($mappedDatas['contact']['standardFields']['InternalCompanyRef']) ? $mappedDatas['contact']['standardFields']['InternalCompanyRef'] : 0;
-
 
 		// CREATE
 		// Si l'une de ces deux clé est inconnue, on crée la société et le contact chez INES
@@ -299,6 +331,9 @@ class InesApi extends CrmApi
 
             // scoring ATMT
             $datas['client']['Contacts']['ContactInfoAuto'][0]['Scoring'] = $leadPoints;
+
+            // Flag désabonnement
+            $datas['client']['Contacts']['ContactInfoAuto'][0]['Desabo'] = $leadDesaboFlag;
 
 			// Requête SOAP : Création chez INES
 			$response = $this->request('ws/wsAutomationsync.asmx', 'AddClientWithContacts', $datas, true, true);
@@ -376,7 +411,6 @@ class InesApi extends CrmApi
 
 				// Appel du WS seulement si nécessaire
 				if ($updateNeeded) {
-
 					// Données à transmettre au web-service
 					$wsDatas = array($concept => $conceptDatas);
 
@@ -396,6 +430,7 @@ class InesApi extends CrmApi
                         $wsDatas['contact']['ModificationDate'] = date("Y-m-d\TH:i:s");
 						$wsDatas['contact']['AutomationRef'] = $leadId;
 						$wsDatas['contact']['Scoring'] = $leadPoints;
+                        $wsDatas['contact']['Desabo'] = $leadDesaboFlag;
 						$wsDatas['contact']['IsNew'] = false;
 
 						// Filtrage des champs : on ne conserve que ceux demandés par le WS spécifique ATMT
@@ -661,10 +696,13 @@ class InesApi extends CrmApi
 		$sessionID = $this->integration->getWebServiceCurrentSessionID();
 		if ( !$sessionID) {
 
+            $this->integration->log('Refresh session ID');
+
 			// Sinon on en demande un
 			$args = array(
 				'request' => $this->integration->getDecryptedApiKeys()
 			);
+
 			$response = $this->request('wslogin/login.asmx', 'authenticationWs', $args, false);
 
 			if (
@@ -692,8 +730,9 @@ class InesApi extends CrmApi
 	protected function getInesSyncConfig()
 	{
 		$syncConfig = $this->integration->getCurrentSyncConfig();
-
 		if ( !$syncConfig) {
+
+            $this->integration->log('Refresh sync config');
 
 			// Appel du WS
 			$response = $this->request('Ws/WSAutomationSync.asmx', 'GetSyncInfo', array(), true);
@@ -702,68 +741,104 @@ class InesApi extends CrmApi
 				throw new ApiErrorException("INES WS : Can't get sync config");
 			}
 
-			// Canal de lead et type de société
+            $companyCustomFields = json_decode(json_encode($results->CompanyCustomFields), true);
+            $companyCustomFields = $companyCustomFields['CustomFieldToAuto'];
+
+            $contactCustomFields = json_decode(json_encode($results->ContactCustomFields), true);
+            $contactCustomFields = $contactCustomFields['CustomFieldToAuto'];
+
+			// Canal de lead, type de société et champs custom
 			$syncConfig = array(
 				'LeadRef' => isset($results->LeadRef) ? $results->LeadRef : 0,
 				'SocieteType' => isset($results->SocieteType) ? $results->SocieteType : 0,
-				'CompanyCustomFields' => json_decode(json_encode($results->CompanyCustomFields), true),
-				'ContactCustomFields' => json_decode(json_encode($results->ContactCustomFields), true)
+				'CompanyCustomFields' => $companyCustomFields,
+				'ContactCustomFields' => $contactCustomFields,
+                'ValuesFromWS' => []
 			);
+
+
+            ///////// Lecture de toutes les clés / valeurs via les WS
+
+            // Toutes les clés / valeurs pour TYPE CONTACT
+            $response = $this->request('ws/wsicm.asmx', 'GetTypeContactList', array(), true, true);
+            if (!isset($response['GetTypeContactListResult']['ContactTypeInfo'])) {
+                throw new ApiErrorException("INES WS GetTypeContactList failed.");
+            }
+            $items = $response['GetTypeContactListResult']['ContactTypeInfo'];
+            $values = [];
+            foreach($items as $item) {
+                $values[ $item['InternalRef'] ] = $item['Description'];
+            }
+            $syncConfig['ValuesFromWS']['GetTypeContactList'] = $values;
+
+            // Toutes les clés / valeurs pour TYPE CLIENT
+            $response = $this->request('ws/wsicm.asmx', 'GetTypeClientList', array(), true, true);
+            if (!isset($response['GetTypeClientListResult']['ClientTypeInfo'])) {
+                throw new ApiErrorException("INES WS GetTypeClientList failed.");
+            }
+            $items = $response['GetTypeClientListResult']['ClientTypeInfo'];
+            $values = [];
+            foreach($items as $item) {
+                $values[ $item['InternalRef'] ] = $item['Description'];
+            }
+            $syncConfig['ValuesFromWS']['GetTypeClientList'] = $values;
+
+            // Toutes les clés / valeurs pour ORIGIN
+            $response = $this->request('ws/wsicm.asmx', 'GetOriginList', array(), true, true);
+            if (!isset($response['GetOriginListResult']['OriginInfo'])) {
+                throw new ApiErrorException("INES WS GetOriginList failed.");
+            }
+            $items = $response['GetOriginListResult']['OriginInfo'];
+            $values = [];
+            foreach($items as $item) {
+                $values[ $item['InternalRef'] ] = $item['Description'];
+            }
+            $syncConfig['ValuesFromWS']['GetOriginList'] = $values;
+
+            // Toutes les clés / valeurs pour USER REF
+            $response = $this->request('ws/wsicm.asmx', 'GetUserInfoFromUserRef', array(), true, true);
+            if (!isset($response['GetUserInfoFromUserRefResult']['UserInfoRH'])) {
+                throw new ApiErrorException("INES WS GetUserInfoFromUserRef failed.");
+            }
+            $items = $response['GetUserInfoFromUserRefResult']['UserInfoRH'];
+            $values = [];
+            foreach($items as $item) {
+                if ( !empty($item['Prefix'])) {
+                    $value = $item['Prefix'].' '.$item['Name'];
+                } else {
+                    $value = $item['Name'];
+                }
+                $values[ $item['UserRef'] ] = $value;
+            }
+            $syncConfig['ValuesFromWS']['GetUserInfoFromUserRef'] = $values;
+
+            // Toutes les clés / valeurs pour RH REF
+            $response = $this->request('ws/wsicm.asmx', 'GetUserInfoFromRHRef', array(), true, true);
+            if (!isset($response['GetUserInfoFromRHRefResult']['UserInfoRH'])) {
+                throw new ApiErrorException("INES WS GetUserInfoFromRHRef failed.");
+            }
+            $items = $response['GetUserInfoFromRHRefResult']['UserInfoRH'];
+            $values = [];
+            foreach($items as $item) {
+                if ( !empty($item['Prefix'])) {
+                    $value = $item['Prefix'].' '.$item['Name'];
+                } else {
+                    $value = $item['Name'];
+                }
+                $values[ $item['RHRef'] ] = $value;
+            }
+            $syncConfig['ValuesFromWS']['GetUserInfoFromRHRef'] = $values;
 
 			// On mémorise la config obtenue pour les appels suivants
 			$this->integration->setCurrentSyncConfig($syncConfig);
+
+            // A chaque fois que la config est régénérée, on vérifie que les champs customs sont bien à jour dans ATMT
+            $this->integration->updateAtmtCustomFieldsDefinitions();
 		}
 
 		return $syncConfig;
 	}
 
-    /**
-     * Récupère via les WS dédiés les tables de conversion string / int pour certains champs INES
-     *
-     * @return array
-     */
-    protected function getStringToIntConversionTables()
-    {
-        $tables = array();
-
-        // Liste des champs concernés par une table de conversion
-        $items = array(
-            ['concept' => 'contact', 'inesFieldKey' => 'Type', 'wsKey' => 'TypeContact', 'wsResponseKey' => 'ContactType'],
-            ['concept' => 'client', 'inesFieldKey' => 'Type', 'wsKey' => 'TypeClient', 'wsResponseKey' => 'ClientType'],
-            ['concept' => 'client', 'inesFieldKey' => 'Origin', 'wsKey' => 'Origin', 'wsResponseKey' => 'Origin']
-        );
-
-        try {
-            foreach($items as $item) {
-
-                // Appel du WS
-                $wsKey = $item['wsKey'];
-                $wsResponseKey = $item['wsResponseKey'];
-                $wsMethod = 'Get'.$wsKey.'List';
-                $response = $this->request('ws/wsicm.asmx', $wsMethod, array(), true, true);
-                if ( !isset($response['Get'.$wsKey.'ListResult'][$wsResponseKey.'Info'])) {
-                    continue;
-                }
-
-                // Lecture des paires clé / valeur
-                $valuesItems = $response['Get'.$wsKey.'ListResult'][$wsResponseKey.'Info'];
-                foreach($valuesItems as $valueItem) {
-                    $conversions[ $valueItem['InternalRef'] ] = $valueItem['Description'];
-                }
-
-                $tables[] = array(
-                    'concept' => $item['concept'],
-                    'inesFieldKey' => $item['inesFieldKey'],
-                    'conversions' => $conversions
-                );
-            }
-        }
-        catch(\Exception $e) {
-            $this->integration->logIntegrationError($e);
-        }
-
-        return $tables;
-    }
 
 
 	/**
@@ -926,6 +1001,8 @@ class InesApi extends CrmApi
             'Type' => 0,
             'State' => '',
             'ZipCode' => '',
+            'Desabo' => '',
+            'NPai' => '',
             'InternalRef' => 0,
             'AutomationRef' => 0,
             'Scoring' => 0

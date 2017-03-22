@@ -8,17 +8,23 @@
 namespace MauticPlugin\MauticCrmBundle\Integration;
 
 use Mautic\LeadBundle\Entity\Lead;
+use Mautic\LeadBundle\Entity\LeadField;
+
 
 /**
  * Class InesIntegration
  */
 class InesIntegration extends CrmAbstractIntegration
 {
-
 	/**
 	 * Array	Mapping retourné par l'intégration, mémorisé en attribut pour limiter les appels
 	 */
 	protected $mapping = false;
+
+    /**
+     * String
+     */
+    protected $stopSyncAtmtKey = 'ines_stop_sync';
 
 
     /**
@@ -207,7 +213,6 @@ class InesIntegration extends CrmAbstractIntegration
 		if (!$this->isConfigured()) {
 			return false;
 		}
-
 		$sessionID = $this->getWebServiceCurrentSessionID();
 		return $sessionID ? true : $this->checkAuth();
 	}
@@ -304,13 +309,6 @@ class InesIntegration extends CrmAbstractIntegration
                 $inesContactFields = array();
                 $inesClientFields = array();
 
-                // Ajout du champ "ne pas synchroniser avec INES" en première position des champs de contact
-        		$inesContactFields['dontSyncToInes'] = array(
-        			'type' => 'string',
-        			'label' => 'Indicateur : ne pas synchroniser',
-        			'required' => true
-        		);
-
                 // Préparation des champs du formulaire
                 // Séparation de la liste par concept (contact / client)
 				foreach($leadFields as $field) {
@@ -390,13 +388,6 @@ class InesIntegration extends CrmAbstractIntegration
 		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
 		$rawMapping = $featureSettings['leadFields'];
 
-		// Retrait du flag "ne pas synchroniser avec INES", qui ne doit pas être mappé
-		foreach($rawMapping as $internalKey => $atmtKey) {
-			if ($internalKey == 'dontSyncToInes') {
-				unset($rawMapping[$internalKey]);
-			}
-		}
-
 		return $rawMapping;
 	}
 
@@ -408,20 +399,11 @@ class InesIntegration extends CrmAbstractIntegration
 	 */
 	public function getDontSyncAtmtKey()
 	{
-		if (!$this->isConfigured()) {
-			return '';
-		}
+        // Le champ custom existe-t-il ?
+        $repo = $this->factory->getModel('lead.field')->getRepository();
+        $searchResult = $repo->findByAlias($this->stopSyncAtmtKey);
 
-		// Recherche du champ contenant l'info "don't sync"
-		$featureSettings = $this->getIntegrationSettings()->getFeatureSettings();
-		$rawMapping = $featureSettings['leadFields'];
-		foreach($rawMapping as $internalKey => $atmtKey) {
-			if ($internalKey == 'dontSyncToInes') {
-				return $atmtKey;
-			}
-		}
-
-		return '';
+        return empty($searchResult) ? '' : $this->stopSyncAtmtKey;
 	}
 
 
@@ -928,6 +910,152 @@ class InesIntegration extends CrmAbstractIntegration
 	}
 
 
+
+    /**
+     * Crée ou met à jour, dans ATMT, les custom fiels dont l'utilisteur peut avoir besoin pour le mapping
+     * Chaque champ a un type (int, bool, list, ...) et une configuration (liste de valeurs, etc.)
+     * La config de certains champs est fixe, et pour d'autres elle est lue via un WS INES
+     *
+     * @return  void
+     */
+    public function updateAtmtCustomFieldsDefinitions()
+    {
+        $model = $this->factory->getModel('lead.field');
+        $repo = $model->getRepository();
+
+        $this->log('Check ATMT custom fields');
+
+        // Liste des champs qui doivent exister dans ATMT et que l'on doit vérifier
+        $fieldsToCheck = array();
+        $inesFields = $this->getApiHelper()->getLeadFields();
+        foreach($inesFields as $inesField) {
+
+            if ($inesField['atmtCustomFieldToCreate'] !== false) {
+
+                $fieldToCheck = $inesField['atmtCustomFieldToCreate'];
+                $fieldToCheck['name'] = $inesField['inesLabel'];
+
+                $fieldsToCheck[] = $fieldToCheck;
+            }
+        }
+
+        // On crée également le champ "Don't sync to INES"
+        $fieldsToCheck[] = [
+            'name' => "Indicateur INES : ne pas synchroniser",
+            'type' => 'boolean',
+            'alias' => $this->stopSyncAtmtKey,
+        ];
+
+        // Vérification de chaque champ
+        foreach($fieldsToCheck as $fieldToCheck) {
+
+            $alias = $fieldToCheck['alias'];
+            $type = isset($fieldToCheck['type']) ? $fieldToCheck['type'] : 'text';
+
+            // Préparation de la config du champ
+            // (ne sera utile qu'en cas de création ou de mise à jour)
+            if ($type == 'number') {
+                $properties = [
+                    'roundmode' => 4,
+                    'precision' => 2
+                ];
+            }
+            else if ($type == 'boolean') {
+                $properties = [
+                    'no' => 'No',
+                    'yes' => 'Yes'
+                ];
+            }
+            else if ($type == 'select') {
+
+                // (Clés / Valeurs) possibles pour le champ
+                $properties = ['list' => []];
+                foreach($fieldToCheck['values'] as $value => $label) {
+                    $properties['list'][] = ['label' => $label, 'value' => $value];
+                }
+            }
+            else {
+                $properties = [];
+            }
+
+
+            // Le champ existe-t-il ?
+            $searchResult = $repo->findByAlias($alias);
+            if (empty($searchResult)) {
+
+                // Le champ n'existe pas : CREATE
+
+                $this->log('Create custom field : '.$alias);
+
+                $fieldEntity = new LeadField();
+                $fieldEntity->setGroup('core');
+                $fieldEntity->setAlias($alias);
+                $fieldEntity->setName($fieldToCheck['name']);
+                $fieldEntity->setType($type);
+                $model->setFieldProperties($fieldEntity, $properties);
+
+                // Création effective du champ
+                try {
+                    $model->saveEntity($fieldEntity);
+                } catch (\Exception $e) {
+                    $this->log("Can't create field ".$alias.' '.$e->getMessage());
+                }
+            }
+            else {
+                // Le champ existe : sa config est-elle correcte ?
+                $fieldEntity = $searchResult[0];
+                $currentProperties = $fieldEntity->getProperties();
+
+                $updateNeeded = false;
+
+                // Le type de champ doit concorder
+                if ($fieldEntity->getType() != $type) {
+                    $updateNeeded = true;
+                }
+                else if ($type =='select') {
+
+                    // La liste des valeurs possibles doit concorder
+                    if ( !isset($currentProperties['list']) || !is_array($currentProperties['list'])) {
+                        $updateNeeded = true;
+                    }
+                    else {
+                        // Comparaison des couples (clé / valeur) existants et souhaités
+                        // S'il y a une erreur, on doit mettre à jour le champ
+                        $tmpValues = $fieldToCheck['values'];
+                        foreach($currentProperties['list'] as $pair) {
+                            if (array_key_exists($pair['value'], $tmpValues) && $tmpValues[$pair['value']] == $pair['label'] ) {
+                                unset($tmpValues[$pair['value']]);
+                            }
+                            else {
+                                $updateNeeded = true;
+                                break;
+                            }
+                        }
+                        if (!$updateNeeded && !empty($tmpValues)) {
+                            $updateNeeded = true;
+                        }
+                    }
+                }
+
+                if ($updateNeeded) {
+
+                    $this->log('Update custom field : '.$alias);
+
+                    $fieldEntity->setType($type);
+                    $model->setFieldProperties($fieldEntity, $properties);
+
+                    try {
+                        $model->saveEntity($fieldEntity);
+                    } catch (\Exception $e) {
+                        $this->log("Can't update field ".$alias.' '.$e->getMessage());
+                    }
+                }
+            }
+        }
+    }
+
+
+
 	/**
 	 * Pour le DEBUG : écrit une ligne dans le log de Mautic
 	 *
@@ -935,6 +1063,7 @@ class InesIntegration extends CrmAbstractIntegration
 	 */
 	public function log($object)
 	{
-		$this->factory->getLogger()->log('info', var_export($object, true));
+        $linearObject = is_string($object) ? $object : var_export($object, true);
+		$this->factory->getLogger()->log('info', 'INES LOG : '.$linearObject);
 	}
 }
