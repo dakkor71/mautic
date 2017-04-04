@@ -2,12 +2,12 @@
 
 /*
  * @copyright   2014 Mautic Contributors. All rights reserved
- * @author      Mautic
- *
- * @link        http://mautic.org
- *
- * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- */
+* @author      Mautic
+*
+* @link        http://mautic.org
+*
+* @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+*/
 
 $customLoginLogoSrc          = $view['core_parameters']->getParameter('custom_login_logo_src');
 $customLoginLogoWrapperStyle = $view['core_parameters']->getParameter('custom_login_logo_wrapper_style');

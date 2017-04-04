@@ -41,7 +41,7 @@ class Version20170106102310 extends AbstractMauticMigration
     {
         $sql = <<<SQL
 ALTER TABLE {$this->prefix}campaign_events
-  ADD channel VARCHAR(255) DEFAULT NULL, 
+  ADD channel VARCHAR(255) DEFAULT NULL,
   ADD channel_id INTEGER DEFAULT NULL,
   ADD INDEX {$this->prefix}campaign_event_channel (channel, channel_id),
   DROP INDEX {$this->prefix}campaign_event_type_search,
@@ -73,7 +73,7 @@ SQL;
         $this->addSql($sql);
 
         $sql = <<<SQL
- ALTER TABLE {$this->prefix}campaign_leads 
+ ALTER TABLE {$this->prefix}campaign_leads
   ADD rotation INTEGER NOT NULL DEFAULT 1,
   ADD date_last_exited DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime)',
   ADD INDEX {$this->prefix}campaign_leads_date_exited (date_last_exited),
@@ -121,7 +121,10 @@ SQL;
            )
            ->setMaxResults(500);
 
+        $logger->addError($qb->getSQL());
+
         $start = 0;
+        if (sizeof($eventsWithChannels)!==0){
         while ($results = $qb->execute()->fetchAll()) {
             $eventChannels = [];
 
@@ -185,6 +188,7 @@ SQL;
             // Increase the start
             $start += 500;
             $qb->setFirstResult($start);
+        }
         }
     }
 }
