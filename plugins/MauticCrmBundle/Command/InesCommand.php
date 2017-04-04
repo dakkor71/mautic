@@ -51,13 +51,13 @@ class InesCommand extends ContainerAwareCommand
 		$inesIntegration = $this->factory->getHelper('integration')->getIntegrationObject('Ines');
 
 		if ( !$inesIntegration->isFullSync()) {
-			$output->writeln("ECHEC : L'intégration INES doit être active et en mode full-sync.");
+			$output->writeln("L'intégration INES doit être active et en mode full-sync.");
 			return 0;
 		}
 
 		if ( !$inesIntegration->isAuthorized()) {
-			$output->writeln("ECHEC : connexion aux web-services INES impossible.");
-			return 0;
+			$output->writeln("ECHEC CRONJOB : connexion aux web-services INES impossible.");
+			return 1;
 		}
 
 
@@ -76,7 +76,7 @@ class InesCommand extends ContainerAwareCommand
 		$s = ($nbEnqueued > 1) ? 's' : '';
 		$output->writeln($nbEnqueued.' lead'.$s." ajouté".$s." à la file d'attente (1ère synchro)");
 
-		return 1;
+		return 0;
     }
 
 }
