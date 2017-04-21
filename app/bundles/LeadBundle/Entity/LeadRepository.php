@@ -238,7 +238,9 @@ class LeadRepository extends CommonRepository implements CustomFieldRepositoryIn
             ->select('l.id')
             ->from(MAUTIC_TABLE_PREFIX.'leads', 'l')
             ->where('LOWER(email) = :search')
-            ->setParameter('search', strtolower($email));
+            ->setParameter('search', strtolower($email))
+            ->andWhere('email_hash = :email_hash')
+            ->setParameter('email_hash', crc32($email));
 
         $result = $q->execute()->fetchAll();
 
