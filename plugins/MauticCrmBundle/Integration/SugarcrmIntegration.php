@@ -255,7 +255,7 @@ class SugarcrmIntegration extends CrmAbstractIntegration
                                 if (isset($fields['module_fields']) && !empty($fields['module_fields'])) {
                                     //6.x/community
                                     foreach ($fields['module_fields'] as $fieldInfo) {
-                                        if (isset($fieldInfo['name']) && (!in_array($fieldInfo['type'], ['id', 'assigned_user_name', 'bool', 'link', 'relate'])
+                                        if (isset($fieldInfo['name']) && (!in_array($fieldInfo['type'], ['assigned_user_name', 'link', 'relate'])
                                         ||
                                         ($fieldInfo['type'] == 'id' && $fieldInfo['name'] == 'id')
                                         )) {
@@ -287,7 +287,7 @@ class SugarcrmIntegration extends CrmAbstractIntegration
                                         if (isset($fieldInfo['name']) && empty($fieldInfo['readonly']) && !empty($fieldInfo['comment'])
                                             && !in_array(
                                                 $fieldInfo['type'],
-                                                ['id', 'team_list', 'bool', 'link', 'relate']
+                                                ['team_list', 'link', 'relate']
                                             )
                                         ) {
                                             $fieldName = (strpos($fieldInfo['name'], 'webtolead_email') === false)
