@@ -95,29 +95,12 @@ class ExceptionController extends CommonController
             $currentUser = $this->factory->getUser();
             $completUrl  = $_SERVER['HTTP_HOST'].$url;
 
-            // envoi du mail automatique au support
-            $uri             = $request->getUri();
-            $ignoredKeywords = $this->coreParametersHelper->getParameter('mail_error_support_ignored_url', []);
-
-            $ignored = false;
-            foreach ($ignoredKeywords as $keyword) {
-                if (strpos($uri, $keyword) !== false) {
-                    $ignored = true;
-                    break;
-                }
-            }
-
-            if ($env === 'prod' && !$ignored) {
-                $this->sendMailSupportAutomatique($currentUser, $completUrl, $exception);
-            }
-
             // construction du mail pour "report an issue"
-            $subject = $this->buildSubjectMail($code, $completUrl, false);
-            $body    = $this->buildBodyMailFromException($currentUser, $completUrl, $exception, false);
+            $subject = $this->buildSubjectMail($code);
+            $body    = $this->buildBodyMailFromException($currentUser, $completUrl, $exception);
 
             $mailDest    = $this->coreParametersHelper->getParameter('mail_error_support_manual_report', 'support@webmecanik.com');
             $mailSupport = $mailDest.'?subject='.$subject.'&body='.$body;
-
             /***/
 
             return $this->delegateView(
@@ -178,82 +161,35 @@ class ExceptionController extends CommonController
     /**
      * construct subject mail.
      */
-    protected function buildSubjectMail($code, $url, $auto)
+    protected function buildSubjectMail($code)
     {
-        if ($auto) {
-            $subject = 'Erreur code '.$code.' -  '.$url;
-        } else {
-            $subject = 'Demande de support - Code : '.$code;
-        }
-
+        $subject = 'Demande de support - Code : '.$code;
         return $subject;
     }
 
-    protected function buildBodyMailFromException($user, $url, $exception, $auto)
+    protected function buildBodyMailFromException($user, $url, $exception)
     {
         $code         = $this->extractCode($exception);
         $errorMessage = $exception->getMessage();
         $stack        = $exception->getTrace();
 
-        return $this->buildBodyMail($code, $errorMessage, $url, $stack, $user, $auto);
+        return $this->buildBodyMail($code, $errorMessage, $url, $stack, $user);
     }
     /**
      * construct body mail.
      */
-    protected function buildBodyMail($code, $errorMessage, $url, $stack, $user, $auto)
+    protected function buildBodyMail($code, $errorMessage, $url, $stack, $user)
     {
         $pile = $this->renderView('MauticCoreBundle:Exception:traces.html.php', ['traces' => $stack]);
-        if ($auto) {
-            $body = '<!DOCTYPE html> ';
-            $body .= '<html>';
-            $body .= '<body> ';
-            $body .= '<strong>MAIL AUTOMATIQUE</strong>  <br/> <br/> ';
-            $body .= 'User : '.$user->getName().', '.$user->getEmail().' <br/> ';
-            $body .= 'Type d\'erreur : '.$code.' '.$errorMessage.' <br/>';
-            $body .= 'Url d\'erreur : '.$url.' <br/> ';
-            $body .= 'Pile : '.$pile.' ';
-            $body .= '</body> ';
-            $body .= '</html> ';
-        } else {
-            $body = 'Votre identité : '.$user->getName().', '.$user->getEmail().' %0D%0A %0D%0A';
-            $body .= 'Ce que vous vouliez faire : '.'%0D%0A %0D%0A';
-            $body .= 'Les actions que vous avez faites : '.'%0D%0A %0D%0A';
-            $body .= 'Ce qui s\'est passé : '.'%0D%0A %0D%0A';
-            $body .= 'Informations complèmentaires : '.'%0D%0A %0D%0A';
-            $body .= '*** NE PAS EFFACER CI DESSOUS - INFORMATIONS POUR LE SUPPORT ***'.'%0D%0A';
-            $body .= 'URL d\'erreur : '."$url %0D%0A";
-            $body .= 'Type d\'erreur : '."$code $errorMessage %0D%0A ";
-        }
+        $body = 'Votre identité : '.$user->getName().', '.$user->getEmail().' %0D%0A %0D%0A';
+        $body .= 'Ce que vous vouliez faire : '.'%0D%0A %0D%0A';
+        $body .= 'Les actions que vous avez faites : '.'%0D%0A %0D%0A';
+        $body .= 'Ce qui s\'est passé : '.'%0D%0A %0D%0A';
+        $body .= 'Informations complèmentaires : '.'%0D%0A %0D%0A';
+        $body .= '*** NE PAS EFFACER CI DESSOUS - INFORMATIONS POUR LE SUPPORT ***'.'%0D%0A';
+        $body .= 'URL d\'erreur : '."$url %0D%0A";
+        $body .= 'Type d\'erreur : '."$code $errorMessage %0D%0A ";
 
         return $body;
-    }
-
-    protected function sendMailSupportAutomatique($user, $url, $exception)
-    {
-        $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto');
-        if (empty($mailDest)) {
-            return; //early break;
-        }
-
-        $code         = $this->extractCode($exception);
-        $errorMessage = $exception->getMessage();
-        $stack        = $exception->getTrace();
-
-        $subjectAuto = $this->buildSubjectMail($code, $url,  true);
-        $bodyAuto    = $this->buildBodyMailFromException($user, $url, $exception, true);
-
-        $subject = InputHelper::clean($subjectAuto);
-        // $body    = InputHelper::clean($bodyAuto);
-
-        $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto', 'support+bot@webmecanik.com');
-        $message  = \Swift_Message::newInstance()
-        ->setSubject($subjectAuto)
-        ->setFrom([$user->getEmail() => $user->getName()])
-        ->setTo($mailDest)
-        ->setCharset('utf-8')
-        ->setContentType('text/html')
-        ->setBody($bodyAuto, 'text / html');
-
-        $this->get('mailer')->send($message);
     }
 }
