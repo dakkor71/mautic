@@ -361,7 +361,7 @@ Mautic.closeBuilder = function(model) {
             // Clear the customize forms
             mQuery('#slot-form-container, #section-form-container').html('');
 
-            customHtml = themeHtml.find('html').get(0).outerHTML
+            customHtml = '<!DOCTYPE html>'+themeHtml.find('html').get(0).outerHTML
         }
 
         // Store the HTML content to the HTML textarea
