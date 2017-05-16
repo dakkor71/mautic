@@ -390,7 +390,8 @@ class PublicController extends CommonFormController
      */
     public function generateAction()
     {
-        $formId = InputHelper::int($this->request->get('id'));
+        $formId  = InputHelper::int($this->request->get('id'));
+        $isAsync = $this->request->get('async') === 'true';
 
         $model = $this->getModel('form.form');
         $form  = $model->getEntity($formId);
@@ -399,7 +400,7 @@ class PublicController extends CommonFormController
         if ($form !== null) {
             $status = $form->getPublishStatus();
             if ($status == 'published') {
-                $js = $model->getAutomaticJavascript($form);
+                $js = $model->getAutomaticJavascript($form, $isAsync);
             }
         }
 

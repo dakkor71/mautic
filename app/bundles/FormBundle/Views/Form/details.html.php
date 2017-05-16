@@ -315,9 +315,9 @@ $showActions = count($activeFormActions);
                     <h3><?php echo $view['translator']->trans('mautic.form.form.help.automaticcopy.js'); ?></h3>
                     <textarea class="form-control" readonly onclick="this.setSelectionRange(0, this.value.length);">&lt;script type="text/javascript" src="<?php echo $view['router']->url(
                             'mautic_form_generateform',
-                            ['id' => $activeForm->getId()],
+                            ['id' => $activeForm->getId(), 'async' => 'true'],
                             true
-                        ); ?>"&gt;&lt;/script&gt;</textarea>
+                        ); ?>" async onload="loadForm(this)"&gt;&lt;/script&gt;</textarea>
                     <h3 class="pt-lg"><?php echo $view['translator']->trans(
                             'mautic.form.form.help.automaticcopy.iframe'
                         ); ?></h3>

@@ -687,7 +687,7 @@ class FormModel extends CommonFormModel
      *
      * @return string
      */
-    public function getAutomaticJavascript(Form $form)
+    public function getAutomaticJavascript(Form $form, $isAjax = false)
     {
         $html = $this->getContent($form);
 
@@ -696,7 +696,13 @@ class FormModel extends CommonFormModel
         $replace = ['\n', '\"'];
         $html    = str_replace($search, $replace, $html);
 
-        return 'document.write("'.$html.'");';
+        if ($isAjax === true) {
+            $content = "function loadForm(refNode){var div = document.createElement('div');div.innerHTML = \"".$html.'";refNode.parentNode.insertBefore(div, refNode);}';
+        } else {
+            $content = 'document.write("'.$html.'");';
+        }
+
+        return $content;
     }
 
     /**
