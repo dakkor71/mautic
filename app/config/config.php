@@ -247,21 +247,42 @@ $container->loadFromExtension('doctrine_migrations', [
 
 // Swiftmailer Configuration
 $mailerSettings = [
-    'transport'  => '%mautic.mailer_transport%',
-    'host'       => '%mautic.mailer_host%',
-    'port'       => '%mautic.mailer_port%',
-    'username'   => '%mautic.mailer_user%',
-    'password'   => '%mautic.mailer_password%',
-    'encryption' => '%mautic.mailer_encryption%',
-    'auth_mode'  => '%mautic.mailer_auth_mode%',
+    'default_mailer' => 'default',
+    'mailers'        => [
+        'default' => [
+            'transport'  => '%mautic.mailer_transport%',
+            'host'       => '%mautic.mailer_host%',
+            'port'       => '%mautic.mailer_port%',
+            'username'   => '%mautic.mailer_user%',
+            'password'   => '%mautic.mailer_password%',
+            'encryption' => '%mautic.mailer_encryption%',
+            'auth_mode'  => '%mautic.mailer_auth_mode%',
+        ],
+       'password_reset_mailer' => [
+            'transport'  => '%mautic.password_reset_mailer_transport%',
+            'host'       => '%mautic.password_reset_mailer_host%',
+            'port'       => '%mautic.password_reset_mailer_port%',
+            'username'   => '%mautic.password_reset_mailer_user%',
+            'password'   => '%mautic.password_reset_mailer_password%',
+            'encryption' => '%mautic.password_reset_mailer_encryption%',
+            'auth_mode'  => '%mautic.password_reset_mailer_auth_mode%',
+        ],
+    ],
 ];
 
 // Only spool if using file as otherwise emails are not sent on redirects
-$spoolType = $container->getParameter('mautic.mailer_spool_type');
+$spoolType              = $container->getParameter('mautic.mailer_spool_type');
+$passwordResetSpoolType = $container->getParameter('mautic.password_reset_mailer_spool_type');
 if ($spoolType == 'file') {
-    $mailerSettings['spool'] = [
+    $mailerSettings['mailers']['default']['spool'] = [
         'type' => '%mautic.mailer_spool_type%',
         'path' => '%mautic.mailer_spool_path%',
+    ];
+}
+if ($passwordResetSpoolType == 'file') {
+    $mailerSettings['mailers']['password_reset_mailer']['spool'] = [
+        'type' => '%mautic.password_reset_mailer_spool_type%',
+        'path' => '%mautic.password_reset_mailer_spool_path%',
     ];
 }
 $container->loadFromExtension('swiftmailer', $mailerSettings);

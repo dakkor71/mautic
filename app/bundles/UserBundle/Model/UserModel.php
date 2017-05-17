@@ -260,7 +260,7 @@ class UserModel extends FormModel
      */
     public function sendResetEmail(User $user)
     {
-        $mailer = $this->mailHelper->getMailer();
+        $mailer = $this->mailHelper->getPasswordResetMailer();
 
         $resetToken = $this->getResetToken($user);
         $resetLink  = $this->router->generate('mautic_user_passwordresetconfirm', ['token' => $resetToken], true);
