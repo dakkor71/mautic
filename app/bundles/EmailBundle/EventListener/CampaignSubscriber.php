@@ -123,6 +123,7 @@ class CampaignSubscriber extends CommonSubscriber
         $email = $event->getEmail();
 
         if ($email !== null) {
+            // dump('this is it');exit();
             $this->campaignEventModel->triggerEvent('email.open', $email, 'email', $email->getId());
         }
     }

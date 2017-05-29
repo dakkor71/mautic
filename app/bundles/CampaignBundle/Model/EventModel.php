@@ -311,6 +311,7 @@ class EventModel extends CommonFormModel
 
         $this->triggeredResponses = [];
         $logs                     = [];
+        // dump($events);exit('nothing in the database at that point...');
         foreach ($events as $campaignId => $campaignEvents) {
             if (empty($campaigns[$campaignId])) {
                 $this->logger->debug('CAMPAIGN: Campaign entity for ID# '.$campaignId.' not found');
@@ -362,6 +363,8 @@ class EventModel extends CommonFormModel
                     continue;
                 }
 
+                ////////
+
                 //check the callback function for the event to make sure it even applies based on its settings
                 if (!$response = $this->invokeEventCallback($event, $decisionEventSettings, $lead, $eventDetails, $systemTriggered)) {
                     $this->logger->debug(
@@ -373,6 +376,8 @@ class EventModel extends CommonFormModel
 
                     continue;
                 }
+
+                ////////
 
                 if (!empty($event['children'])) {
                     $this->logger->debug('CAMPAIGN: '.ucfirst($event['eventType']).' ID# '.$event['id'].' has children');
@@ -420,7 +425,11 @@ class EventModel extends CommonFormModel
                 }
             }
 
+            //// YES BRANCH 10 MINUTES WAIT TRIGGERED ////
+
             $this->triggerConditions($campaigns[$campaignId]);
+
+            //// NO BRANCH 10 MINUTES WAIT TRIGGERED ////
         }
 
         if (count($logs)) {

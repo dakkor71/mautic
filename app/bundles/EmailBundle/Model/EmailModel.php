@@ -465,6 +465,7 @@ class EmailModel extends FormModel implements AjaxLookupModelInterface
         $stat->setIpAddress($ipAddress);
 
         if ($this->dispatcher->hasListeners(EmailEvents::EMAIL_ON_OPEN)) {
+            // dump('come on');exit();
             $event = new EmailOpenEvent($stat, $request, $firstTime);
             $this->dispatcher->dispatch(EmailEvents::EMAIL_ON_OPEN, $event);
         }

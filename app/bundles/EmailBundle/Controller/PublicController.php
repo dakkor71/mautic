@@ -40,6 +40,7 @@ class PublicController extends CommonFormController
 
         if (!empty($stat)) {
             if ($this->get('mautic.security')->isAnonymous()) {
+                // dump('here it goes again');exit();
                 $model->hitEmail($stat, $this->request, true);
             }
 
