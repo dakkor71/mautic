@@ -221,6 +221,47 @@ class EventModel extends CommonFormModel
     }
 
     /**
+     * check if an oposite Path has been aleardy triggered before.
+     *
+     * @param Event      $actionEvent
+     * @param Event|null $parentEvent
+     *
+     * @return bool
+     */
+
+    /**
+     * event parameter should be in "array" form.
+     *
+     * @param $actionEvent
+     * @param $parentEvent
+     *
+     * @return bool
+     */
+    private function isDecisionEventAlreadyTriggered($actionEvent, $parentEvent = null, $eventLog = null)
+    {
+        if (is_null($parentEvent)) {
+            $parentEvent = $this->getRepository()->getEvent($actionEvent['parent_id']);
+            if (is_null($parentEvent)) {
+                //no parent
+                return false;
+            }
+        }
+
+        if ($parentEvent['type'] !== Event::TYPE_DECISION) {
+            return false;
+        }
+
+        // loading all brother
+        $brothersEvent = $this->getRepository()->getEventsByParent($actionEvent['parent_id']);
+
+        /* @var Event $child */
+        foreach ($brothersEvent as $brotherEvent) {
+            var_dump($brotherEvent);
+        }
+
+        return false;
+    }
+    /**
      * Triggers an event.
      *
      * @param      $type
@@ -1221,7 +1262,11 @@ class EventModel extends CommonFormModel
 
                                 // First get the timing for all the 'non-decision' actions
                                 $eventTiming[$id] = $this->checkEventTiming($e, $grandParentDate, true);
-                                if ($eventTiming[$id] === true) {
+
+                                // checkIf parentevent is decision AND if this events had been already triggered in an other branch
+                                $descisionAlreadyTriggered = $this->isDecisionEventAlreadyTriggered($e);
+
+                                if ($eventTiming[$id] === true && $descisionAlreadyTriggered === true) {
                                     // Includes events to be executed now then schedule the rest if applicable
                                     $executeAction = true;
                                 }
