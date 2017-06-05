@@ -98,12 +98,7 @@ class ExceptionController extends CommonController
 
             // envoi du mail automatique au support
             $uri             = $request->getUri();
-            $ignoredKeywords = [
-                'apple-touch-icon',
-                'dnt-policy',
-                'browserconfig',
-                'apple-app-site-association',
-            ];
+            $ignoredKeywords = $this->coreParametersHelper->getParameter('mail_error_support_ignored_url', []);
 
             $ignored = false;
             foreach ($ignoredKeywords as $keyword) {
@@ -117,10 +112,12 @@ class ExceptionController extends CommonController
                 $this->sendMailSupportAutomatique($currentUser, $completUrl, $exception);
             }
 
-            // construction du mail
-            $subject     = $this->buildSubjectMail($code, $completUrl, false);
-            $body        = $this->buildBodyMailFromException($currentUser, $completUrl, $exception, false);
-            $mailSupport = 'support+bot@webmecanik.com?subject='.$subject.'&body='.$body;
+            // construction du mail pour "report an issue"
+            $subject = $this->buildSubjectMail($code, $completUrl, false);
+            $body    = $this->buildBodyMailFromException($currentUser, $completUrl, $exception, false);
+
+            $mailDest    = $this->coreParametersHelper->getParameter('mail_error_support_manual_report', 'support@webmecanik.com');
+            $mailSupport = $mailDest.'?subject='.$subject.'&body='.$body;
 
             /***/
 
@@ -134,6 +131,7 @@ class ExceptionController extends CommonController
                         'logger'         => $logger,
                         'currentContent' => $currentContent,
                         'isPublicPage'   => $anonymous,
+                        'mailSupport'    => $mailSupport,
                     ],
                     'contentTemplate' => $template,
                     'passthroughVars' => [
@@ -212,17 +210,17 @@ class ExceptionController extends CommonController
             $body .= '<body> ';
             $body .= '<strong>MAIL AUTOMATIQUE</strong>  <br/> <br/> ';
             $body .= 'User : '.$user->getName().', '.$user->getEmail().' <br/> ';
-            $body .= 'Type d?erreur : '.$code.' '.$errorMessage.' <br/>';
-            $body .= 'Url d?erreur : '.$url.' <br/> ';
+            $body .= 'Type d\'erreur : '.$code.' '.$errorMessage.' <br/>';
+            $body .= 'Url d\'erreur : '.$url.' <br/> ';
             $body .= 'Pile : '.$pile.' ';
             $body .= '</body> ';
             $body .= '</html> ';
         } else {
-            $body = 'Votre identit� : '.$user->getName().', '.$user->getEmail().' %0D%0A %0D%0A';
+            $body = 'Votre identité : '.$user->getName().', '.$user->getEmail().' %0D%0A %0D%0A';
             $body .= 'Ce que vous vouliez faire : '.'%0D%0A %0D%0A';
             $body .= 'Les actions que vous avez faites : '.'%0D%0A %0D%0A';
-            $body .= 'Ce qui s\'est pass� : '.'%0D%0A %0D%0A';
-            $body .= 'Informations compl�mentaires : '.'%0D%0A %0D%0A';
+            $body .= 'Ce qui s\'est passé : '.'%0D%0A %0D%0A';
+            $body .= 'Informations complèmentaires : '.'%0D%0A %0D%0A';
             $body .= '*** NE PAS EFFACER CI DESSOUS - INFORMATIONS POUR LE SUPPORT ***'.'%0D%0A';
             $body .= 'URL d\'erreur : '."$url %0D%0A";
             $body .= 'Type d\'erreur : '."$code $errorMessage %0D%0A ";
@@ -233,6 +231,11 @@ class ExceptionController extends CommonController
 
     protected function sendMailSupportAutomatique($user, $url, $exception)
     {
+        $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto');
+        if (empty($mailDest)) {
+            return; //early break;
+        }
+
         $code         = $this->extractCode($exception);
         $errorMessage = $exception->getMessage();
         $stack        = $exception->getTrace();
@@ -243,10 +246,11 @@ class ExceptionController extends CommonController
         $subject = InputHelper::clean($subjectAuto);
         // $body    = InputHelper::clean($bodyAuto);
 
-        $message = \Swift_Message::newInstance()
+        $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto', 'support+bot@webmecanik.com');
+        $message  = \Swift_Message::newInstance()
             ->setSubject($subjectAuto)
             ->setFrom([$user->getEmail() => $user->getName()])
-            ->setTo('support@webmecanik.com')
+            ->setTo($mailDest)
             ->setCharset('utf-8')
             ->setContentType('text/html')
             ->setBody($bodyAuto, 'text / html');

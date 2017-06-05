@@ -9,8 +9,8 @@
  * @license     GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
-$customLoginLogoSrc          = $view['mautic.config']->getParameter('custom_login_logo_src');
-$customLoginLogoWrapperStyle = $view['mautic.config']->getParameter('custom_login_logo_wrapper_style');
+$customLoginLogoSrc          = $view['core_parameters']->getParameter('custom_login_logo_src');
+$customLoginLogoWrapperStyle = $view['core_parameters']->getParameter('custom_login_logo_wrapper_style');
 
 $customLoginLogoWrapperStyleAttr = '';
 if (!empty($customLoginLogoWrapperStyle)) {

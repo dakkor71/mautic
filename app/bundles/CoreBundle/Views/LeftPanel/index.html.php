@@ -2,18 +2,18 @@
 
 /*
  * @copyright 2014 Mautic Contributors. All rights reserved
- * @author Mautic
- * @link http://mautic.org
- * @license GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
- */
+* @author Mautic
+* @link http://mautic.org
+* @license GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+*/
 $extraMenu              = $view['menu']->render('extra');
-$customSidebarStyle     = $view['mautic.config']->getParameter('custom_sidebar_style');
-$customSidebarLinkStyle = $view['mautic.config']->getParameter('custom_sidebar_link_style');
-$customLogoSrc          = $view['mautic.config']->getParameter('custom_logo_src');
-$customLogoStyle        = $view['mautic.config']->getParameter('custom_logo_style');
-$customLogoTextSrc      = $view['mautic.config']->getParameter('custom_logo_text_src');
-$customLogoTextStyle    = $view['mautic.config']->getParameter('custom_logo_text_style');
-$customMenuStyle        = $view['mautic.config']->getParameter('custom_menu_style');
+$customSidebarStyle     = $view['core_parameters']->getParameter('custom_sidebar_style');
+$customSidebarLinkStyle = $view['core_parameters']->getParameter('custom_sidebar_link_style');
+$customLogoSrc          = $view['core_parameters']->getParameter('custom_logo_src');
+$customLogoStyle        = $view['core_parameters']->getParameter('custom_logo_style');
+$customLogoTextSrc      = $view['core_parameters']->getParameter('custom_logo_text_src');
+$customLogoTextStyle    = $view['core_parameters']->getParameter('custom_logo_text_style');
+$customMenuStyle        = $view['core_parameters']->getParameter('custom_menu_style');
 
 $customLogoStyleAttr = '';
 if (!empty($customLogoStyle)) {
