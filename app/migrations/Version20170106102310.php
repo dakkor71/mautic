@@ -41,7 +41,7 @@ class Version20170106102310 extends AbstractMauticMigration
     {
         $sql = <<<SQL
 ALTER TABLE {$this->prefix}campaign_events
-  ADD channel VARCHAR(255) DEFAULT NULL, 
+  ADD channel VARCHAR(255) DEFAULT NULL,
   ADD channel_id INTEGER DEFAULT NULL,
   ADD INDEX {$this->prefix}campaign_event_channel (channel, channel_id),
   DROP INDEX {$this->prefix}campaign_event_type_search,
@@ -73,7 +73,7 @@ SQL;
         $this->addSql($sql);
 
         $sql = <<<SQL
- ALTER TABLE {$this->prefix}campaign_leads 
+ ALTER TABLE {$this->prefix}campaign_leads
   ADD rotation INTEGER NOT NULL DEFAULT 1,
   ADD date_last_exited DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime)',
   ADD INDEX {$this->prefix}campaign_leads_date_exited (date_last_exited),
@@ -121,70 +121,74 @@ SQL;
            )
            ->setMaxResults(500);
 
+        $logger->addError($qb->getSQL());
+
         $start = 0;
-        while ($results = $qb->execute()->fetchAll()) {
-            $eventChannels = [];
+        if (sizeof($eventsWithChannels) !== 0) {
+            while ($results = $qb->execute()->fetchAll()) {
+                $eventChannels = [];
 
             // Start a transaction
             $this->connection->beginTransaction();
 
-            foreach ($results as $row) {
-                $channelId  = null;
-                $eventType  = $row['type'];
-                $properties = unserialize($row['properties']);
-                $field      = !empty($eventsWithChannels[$eventType]['channelIdField']) ? $eventsWithChannels[$eventType]['channelIdField'] : null;
-                if ($field && isset($properties[$field])) {
-                    if (is_array($properties[$field])) {
-                        if (count($properties[$field]) === 1) {
-                            $channelId = $properties[$field][0];
+                foreach ($results as $row) {
+                    $channelId  = null;
+                    $eventType  = $row['type'];
+                    $properties = unserialize($row['properties']);
+                    $field      = !empty($eventsWithChannels[$eventType]['channelIdField']) ? $eventsWithChannels[$eventType]['channelIdField'] : null;
+                    if ($field && isset($properties[$field])) {
+                        if (is_array($properties[$field])) {
+                            if (count($properties[$field]) === 1) {
+                                $channelId = $properties[$field][0];
+                            }
+                        } elseif (!empty($properties[$field])) {
+                            $channelId = $properties[$field];
                         }
-                    } elseif (!empty($properties[$field])) {
-                        $channelId = $properties[$field];
                     }
-                }
 
-                $eventChannels[$row['id']] = [
+                    $eventChannels[$row['id']] = [
                     'channel'    => $eventsWithChannels[$eventType]['channel'],
                     'channel_id' => (is_numeric($channelId)) ? $channelId : null,
                 ];
 
-                $this->connection->update(
+                    $this->connection->update(
                     MAUTIC_TABLE_PREFIX.'campaign_events',
                     $eventChannels[$row['id']],
                     [
                         'id' => $row['id'],
                     ]
                 );
-            }
+                }
 
-            try {
-                $this->connection->commit();
+                try {
+                    $this->connection->commit();
 
                 // Update logs
                 $this->connection->beginTransaction();
-                foreach ($eventChannels as $id => $channel) {
-                    $lqb = $this->connection->createQueryBuilder()
+                    foreach ($eventChannels as $id => $channel) {
+                        $lqb = $this->connection->createQueryBuilder()
                                             ->update($this->prefix.'campaign_lead_event_log')
                                             ->set('channel', ':channel')
                                             ->set('channel_id', ':channel_id')
                                             ->setParameters($channel);
-                    $lqb->where(
+                        $lqb->where(
                         $lqb->expr()->andX(
                             $lqb->expr()->eq('event_id', $id),
                             $lqb->expr()->isNull('channel')
                         )
                     )->execute();
-                }
-                $this->connection->commit();
-            } catch (\Exception $e) {
-                $this->connection->rollBack();
+                    }
+                    $this->connection->commit();
+                } catch (\Exception $e) {
+                    $this->connection->rollBack();
 
-                $logger->addError($e->getMessage(), ['exception' => $e]);
-            }
+                    $logger->addError($e->getMessage(), ['exception' => $e]);
+                }
 
             // Increase the start
             $start += 500;
-            $qb->setFirstResult($start);
+                $qb->setFirstResult($start);
+            }
         }
     }
 }

@@ -248,12 +248,12 @@ class ExceptionController extends CommonController
 
         $mailDest = $this->coreParametersHelper->getParameter('mail_error_support_mail_auto', 'support+bot@webmecanik.com');
         $message  = \Swift_Message::newInstance()
-            ->setSubject($subjectAuto)
-            ->setFrom([$user->getEmail() => $user->getName()])
-            ->setTo($mailDest)
-            ->setCharset('utf-8')
-            ->setContentType('text/html')
-            ->setBody($bodyAuto, 'text / html');
+        ->setSubject($subjectAuto)
+        ->setFrom([$user->getEmail() => $user->getName()])
+        ->setTo($mailDest)
+        ->setCharset('utf-8')
+        ->setContentType('text/html')
+        ->setBody($bodyAuto, 'text / html');
 
         $this->get('mailer')->send($message);
     }

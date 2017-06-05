@@ -13,6 +13,7 @@ namespace Mautic\CoreBundle\Helper;
 
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Templating\Helper\Helper;
 
 /**
  * Class CoreParametersHelper.
